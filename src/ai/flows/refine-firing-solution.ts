@@ -1,17 +1,17 @@
 'use server';
 
 /**
- * @fileOverview A flow that uses generative AI to refine a firing solution based on weapon system biases.
+ * @fileOverview A flow that uses generative AI to generate a detailed firing solution report.
  *
- * - refineFiringSolution - A function that refines the firing solution using AI.
- * - RefineFiringSolutionInput - The input type for the refineFiringSolution function.
- * - RefineFiringSolutionOutput - The return type for the refineFiringSolution function.
+ * - generateFiringSolutionReport - A function that creates the firing solution report using AI.
+ * - FiringSolutionReportInput - The input type for the generateFiringSolutionReport function.
+ * - FiringSolutionReportOutput - The return type for the generateFiringSolutionReport function.
  */
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-const RefineFiringSolutionInputSchema = z.object({
+const FiringSolutionReportInputSchema = z.object({
   weaponSystem: z
     .string()
     .describe('The specific NATO indirect fire weapon system (e.g., M777, AS90).'),
@@ -22,35 +22,46 @@ const RefineFiringSolutionInputSchema = z.object({
   charge: z.string().describe('The charge being used.'),
   projectileType: z.string().describe('The type of projectile being fired.'),
   meteorologicalData: z.string().describe('Meteorological data relevant to the firing solution.'),
-  initialElevation: z.number().describe('Initial elevation firing solution.'),
-  initialAzimuth: z.number().describe('Initial azimuth firing solution.'),
+  initialElevation: z.number().describe('Initial elevation firing solution in degrees.'),
+  initialAzimuth: z.number().describe('Initial azimuth firing solution in degrees.'),
   timeOfFlight: z.number().describe('Time of flight of the projectile in seconds.'),
   range: z.number().describe('Range to the target in meters.'),
 });
-export type RefineFiringSolutionInput = z.infer<typeof RefineFiringSolutionInputSchema>;
+export type FiringSolutionReportInput = z.infer<typeof FiringSolutionReportInputSchema>;
 
-const RefineFiringSolutionOutputSchema = z.object({
-  refinedElevation: z.number().describe('The refined elevation for the firing solution.'),
-  refinedAzimuth: z.number().describe('The refined azimuth for the firing solution.'),
+const FiringSolutionReportOutputSchema = z.object({
+  report: z.string().describe('The full, formatted firing solution report as a single string.'),
 });
-export type RefineFiringSolutionOutput = z.infer<typeof RefineFiringSolutionOutputSchema>;
+export type FiringSolutionReportOutput = z.infer<typeof FiringSolutionReportOutputSchema>;
 
-export async function refineFiringSolution(
-  input: RefineFiringSolutionInput
-): Promise<RefineFiringSolutionOutput> {
-  return refineFiringSolutionFlow(input);
+export async function generateFiringSolutionReport(
+  input: FiringSolutionReportInput
+): Promise<FiringSolutionReportOutput> {
+  return generateFiringSolutionReportFlow(input);
 }
 
-const refineFiringSolutionPrompt = ai.definePrompt({
-  name: 'refineFiringSolutionPrompt',
-  input: {schema: RefineFiringSolutionInputSchema},
-  output: {schema: RefineFiringSolutionOutputSchema},
-  prompt: `You are an expert in artillery and ballistics. You are given an initial firing solution for a specific weapon system, along with other relevant data. Your task is to subtly refine the firing solution, specifically the elevation and azimuth, to account for known biases of the weapon system and ammunition combination, and environmental factors.
+const generateFiringSolutionPrompt = ai.definePrompt({
+  name: 'generateFiringSolutionPrompt',
+  input: {schema: FiringSolutionReportInputSchema},
+  output: {schema: FiringSolutionReportOutputSchema},
+  prompt: `You are an expert in artillery and ballistics. You are given an initial firing solution and mission parameters. Your task is to generate a complete, professional firing solution report in the format provided below. Convert degrees to mils where appropriate (1 degree = 17.777... mils).
 
+**Format:**
+Weapon System: [Weapon System]
+Projectiles: [Projectile Type] [Ammunition Type]
+Charge: [Charge]
+Range to Target: [Range in meters] meters
+Grid Azimuth: [Azimuth in mils] mils
+Quadrant Elevation (QE): [Elevation in mils] mils
+Time of Flight (TOF): Approximately [Time of flight] seconds
+Meteorological Corrections Applied: [Summarize relevant MET data]
+Site Picture: [Note any significant elevation difference between weapon and target]
+
+**Mission Data:**
 Weapon System: {{{weaponSystem}}}
 Target Coordinates: {{{targetCoordinates}}}
 Weapon Coordinates: {{{weaponCoordinates}}}
-Elevation: {{{elevation}}} meters
+Weapon Elevation: {{{elevation}}} meters
 Ammunition Type: {{{ammunitionType}}}
 Charge: {{{charge}}}
 Projectile Type: {{{projectileType}}}
@@ -60,19 +71,17 @@ Initial Azimuth: {{{initialAzimuth}}} degrees
 Time of Flight: {{{timeOfFlight}}} seconds
 Range: {{{range}}} meters
 
-Based on your expert knowledge, provide a refined firing solution. The refined solution should only deviate slightly from the initial solution, accounting for small discrepancies known to occur with this weapon system and ammunition.
-
-Refined Elevation:`, // The rest of the prompt is autogenerated from the output schema
+Generate the report based on the mission data. If the range is too short for effective indirect fire (e.g., under 2000m), state that a standard indirect fire solution cannot be generated and provide a theoretical direct fire solution instead, including bearing in degrees.`,
 });
 
-const refineFiringSolutionFlow = ai.defineFlow(
+const generateFiringSolutionReportFlow = ai.defineFlow(
   {
-    name: 'refineFiringSolutionFlow',
-    inputSchema: RefineFiringSolutionInputSchema,
-    outputSchema: RefineFiringSolutionOutputSchema,
+    name: 'generateFiringSolutionReportFlow',
+    inputSchema: FiringSolutionReportInputSchema,
+    outputSchema: FiringSolutionReportOutputSchema,
   },
   async input => {
-    const {output} = await refineFiringSolutionPrompt(input);
+    const {output} = await generateFiringSolutionPrompt(input);
     return output!;
   }
 );

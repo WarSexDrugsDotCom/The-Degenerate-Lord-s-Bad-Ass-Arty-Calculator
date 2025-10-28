@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { RefineFiringSolutionOutput } from '@/ai/flows/refine-firing-solution';
+import type { FiringSolutionReportOutput } from '@/ai/flows/refine-firing-solution';
 
 export const FormSchema = z.object({
   weaponSystem: z.string().min(1, "Weapon system is required."),
@@ -20,4 +20,4 @@ export interface FiringSolution {
   range: number;
 }
 
-export type RefinedFiringSolution = RefineFiringSolutionOutput;
+export type FiringSolutionReport = FiringSolutionReportOutput;

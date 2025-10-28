@@ -1,14 +1,14 @@
 
 'use server';
 
-import { refineFiringSolution, RefineFiringSolutionInput, RefineFiringSolutionOutput } from '@/ai/flows/refine-firing-solution';
+import { generateFiringSolutionReport, FiringSolutionReportInput, FiringSolutionReportOutput } from '@/ai/flows/refine-firing-solution';
 
-export async function getRefinedSolution(input: RefineFiringSolutionInput): Promise<RefineFiringSolutionOutput | { error: string }> {
+export async function getFiringSolutionReport(input: FiringSolutionReportInput): Promise<FiringSolutionReportOutput | { error: string }> {
   try {
-    const output = await refineFiringSolution(input);
+    const output = await generateFiringSolutionReport(input);
     return output;
   } catch (e: any) {
     console.error(e);
-    return { error: e.message || 'An unknown error occurred while refining the solution.' };
+    return { error: e.message || 'An unknown error occurred while generating the solution report.' };
   }
 }

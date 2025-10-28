@@ -53,9 +53,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
-import { FormSchema, type FiringSolution, type RefinedFiringSolution } from '@/lib/types';
+import { FormSchema, type FiringSolution, type FiringSolutionReport } from '@/lib/types';
 import { calculateFiringSolution, fetchWeatherData, fetchElevationData, getDistance } from '@/lib/arty';
-import { getRefinedSolution } from '@/app/actions';
+import { getFiringSolutionReport } from '@/app/actions';
 
 const WEAPON_SYSTEMS = ['M777 Howitzer', 'AS-90', 'M109 Paladin', 'CAESAR'];
 const AMMO_TYPES = ['M795 HE', 'M549 HERA', 'Excalibur'];
@@ -64,12 +64,13 @@ const PROJECTILE_TYPES = ['Standard', 'Base Bleed', 'Rocket Assisted'];
 
 export function CalculatorPage() {
   const [solution, setSolution] = useState<FiringSolution | null>(null);
-  const [refinedSolution, setRefinedSolution] = useState<RefinedFiringSolution | null>(null);
+  const [solutionReport, setSolutionReport] = useState<FiringSolutionReport | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
   const [isFetchingData, setIsFetchingData] = useState(false);
   const [fetchedRange, setFetchedRange] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const [useAI, setUseAI] = useState(true);
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
@@ -90,17 +91,15 @@ export function CalculatorPage() {
     setIsCalculating(true);
     setError(null);
     setSolution(null);
-    setRefinedSolution(null);
+    setSolutionReport(null);
     setFetchedRange(null);
+    const useAI = data.refineWithAI;
 
     try {
-      // Simulate calculation delay
-      await new Promise((resolve) => setTimeout(resolve, 750));
-
       const initialSolution = calculateFiringSolution(data);
       setSolution(initialSolution);
 
-      if (data.refineWithAI) {
+      if (useAI) {
         const aiInput = {
           ...data,
           initialElevation: initialSolution.elevation,
@@ -108,12 +107,12 @@ export function CalculatorPage() {
           timeOfFlight: initialSolution.timeOfFlight,
           range: initialSolution.range,
         };
-        const result = await getRefinedSolution(aiInput);
+        const result = await getFiringSolutionReport(aiInput);
 
         if ('error' in result) {
           throw new Error(result.error);
         }
-        setRefinedSolution(result);
+        setSolutionReport(result);
       }
     } catch (e: any) {
       const errorMessage = e.message || 'An unexpected error occurred.';
@@ -170,7 +169,7 @@ export function CalculatorPage() {
         <h1 className="font-headline text-3xl md:text-4xl font-bold tracking-tighter">
           The Degenerate Lord&apos;s Bad Ass Arty Calculator
         </h1>
-        <p className="text-muted-foreground">Precision artillery solutions with optional AI-powered refinement.</p>
+        <p className="text-muted-foreground">Precision artillery solutions with optional AI-powered analysis.</p>
         <AsciiArt />
       </header>
 
@@ -324,15 +323,16 @@ export function CalculatorPage() {
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm bg-background">
                       <div className="space-y-0.5">
-                        <FormLabel className='flex items-center gap-2'><Sparkles className="w-4 h-4 text-accent"/> AI Solution Refinement</FormLabel>
+                        <FormLabel className='flex items-center gap-2'><Sparkles className="w-4 h-4 text-accent"/> AI Solution Analysis</FormLabel>
                         <FormDescription>
-                          Use GenAI to refine the solution for known system biases.
+                          Use GenAI to generate a full solution report.
                         </FormDescription>
                       </div>
                       <FormControl>
                         <Switch
                           checked={field.value}
                           onCheckedChange={field.onChange}
+                          onValueChange={() => setUseAI(v => !v)}
                         />
                       </FormControl>
                     </FormItem>
@@ -352,16 +352,16 @@ export function CalculatorPage() {
           {error && (
              <Alert variant="destructive">
                <Bot className="h-4 w-4" />
-               <AlertTitle>AI Refinement Error</AlertTitle>
+               <AlertTitle>AI Analysis Error</AlertTitle>
                <AlertDescription>{error}</AlertDescription>
              </Alert>
           )}
 
-          {isCalculating && <ResultsSkeleton refineWithAI={form.getValues('refineWithAI')} />}
+          {isCalculating && <ResultsSkeleton useAI={useAI} />}
           
-          {!isCalculating && !solution && <InitialState range={fetchedRange} isFetching={isFetchingData} />}
+          {!isCalculating && (!solution && !solutionReport) && <InitialState range={fetchedRange} isFetching={isFetchingData} />}
 
-          {solution && (
+          {solution && !solutionReport && (
              <Card className="shadow-lg">
                 <CardHeader>
                     <CardTitle>Standard Ballistic Solution</CardTitle>
@@ -376,18 +376,19 @@ export function CalculatorPage() {
              </Card>
           )}
           
-          {refinedSolution && (
+          {solutionReport && (
             <Card className="shadow-lg border-accent">
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <Bot className="text-accent"/>
-                        <span>AI Refined Solution</span>
+                        <span>AI Firing Solution Report</span>
                     </CardTitle>
-                    <CardDescription>Subtly adjusted by GenAI for system and ammo biases.</CardDescription>
+                    <CardDescription>Generated by AI based on mission parameters.</CardDescription>
                 </CardHeader>
-                <CardContent className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
-                    <SolutionMetric icon={Gauge} label="Refined Elevation" value={refinedSolution.refinedElevation.toFixed(4)} unit="°" highlight />
-                    <SolutionMetric icon={Target} label="Refined Azimuth" value={refinedSolution.refinedAzimuth.toFixed(4)} unit="°" highlight />
+                <CardContent>
+                  <pre className="text-sm font-code whitespace-pre-wrap bg-secondary/30 p-4 rounded-lg">
+                    <code>{solutionReport.report}</code>
+                  </pre>
                 </CardContent>
             </Card>
           )}
@@ -431,31 +432,25 @@ const InitialState = ({ range, isFetching }: { range: number | null, isFetching:
     </Card>
   );
 
-const ResultsSkeleton = ({ refineWithAI }: { refineWithAI: boolean }) => (
+const ResultsSkeleton = ({ useAI }: { useAI: boolean }) => (
     <div className="space-y-8">
         <Card>
             <CardHeader>
                 <Skeleton className="h-6 w-3/4" />
                 <Skeleton className="h-4 w-1/2" />
             </CardHeader>
-            <CardContent className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                <Skeleton className="h-24 w-full" />
-                <Skeleton className="h-24 w-full" />
-                <Skeleton className="h-24 w-full" />
-                <Skeleton className="h-24 w-full" />
+            <CardContent>
+              {useAI ? (
+                  <Skeleton className="h-48 w-full" />
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <Skeleton className="h-24 w-full" />
+                    <Skeleton className="h-24 w-full" />
+                    <Skeleton className="h-24 w-full" />
+                    <Skeleton className="h-24 w-full" />
+                </div>
+              )}
             </CardContent>
         </Card>
-        {refineWithAI && (
-            <Card>
-                <CardHeader>
-                    <Skeleton className="h-6 w-3/4" />
-                    <Skeleton className="h-4 w-1/2" />
-                </CardHeader>
-                <CardContent className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                    <Skeleton className="h-24 w-full" />
-                    <Skeleton className="h-24 w-full" />
-                </CardContent>
-            </Card>
-        )}
     </div>
 );
