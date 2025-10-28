@@ -19,6 +19,7 @@ import {
   Box,
   Layers,
   Sparkles,
+  Link,
 } from 'lucide-react';
 
 import {
@@ -170,6 +171,10 @@ export function CalculatorPage() {
           The Degenerate Lord&apos;s Bad Ass Arty Calculator
         </h1>
         <p className="text-muted-foreground">Precision artillery solutions with optional AI-powered analysis.</p>
+        <a href="https://warsexdrugs.com/" target="_blank" rel="noopener noreferrer" className="text-sm text-accent hover:underline flex items-center justify-center gap-1">
+          <Link className="w-4 h-4" />
+          warsexdrugs.com
+        </a>
         <AsciiArt />
       </header>
 
