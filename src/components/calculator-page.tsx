@@ -70,7 +70,6 @@ export function CalculatorPage() {
   const [fetchedRange, setFetchedRange] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
-  const [useAI, setUseAI] = useState(true);
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
@@ -87,19 +86,20 @@ export function CalculatorPage() {
     },
   });
 
+  const useAI = form.watch('refineWithAI');
+
   async function onSubmit(data: z.infer<typeof FormSchema>) {
     setIsCalculating(true);
     setError(null);
     setSolution(null);
     setSolutionReport(null);
     setFetchedRange(null);
-    const useAI = data.refineWithAI;
 
     try {
       const initialSolution = calculateFiringSolution(data);
       setSolution(initialSolution);
 
-      if (useAI) {
+      if (data.refineWithAI) {
         const aiInput = {
           ...data,
           initialElevation: initialSolution.elevation,
@@ -332,7 +332,6 @@ export function CalculatorPage() {
                         <Switch
                           checked={field.value}
                           onCheckedChange={field.onChange}
-                          onValueChange={() => setUseAI(v => !v)}
                         />
                       </FormControl>
                     </FormItem>
@@ -361,7 +360,7 @@ export function CalculatorPage() {
           
           {!isCalculating && (!solution && !solutionReport) && <InitialState range={fetchedRange} isFetching={isFetchingData} />}
 
-          {solution && !solutionReport && (
+          {solution && !useAI && (
              <Card className="shadow-lg">
                 <CardHeader>
                     <CardTitle>Standard Ballistic Solution</CardTitle>
