@@ -79,6 +79,7 @@ export function CalculatorPage() {
       targetCoordinates: '40.7128, -74.0060',
       weaponCoordinates: '40.7128, -74.0070',
       elevation: 10,
+      targetElevation: 10,
       ammunitionType: 'M795 HE',
       charge: 'White',
       projectileType: 'Standard',
@@ -137,14 +138,20 @@ export function CalculatorPage() {
 
     try {
       const weatherPromise = fetchWeatherData(targetCoords);
-      const elevationPromise = fetchElevationData(weaponCoords);
+      const weaponElevationPromise = fetchElevationData(weaponCoords);
+      const targetElevationPromise = fetchElevationData(targetCoords);
       const range = getDistance(weaponCoords, targetCoords);
       setFetchedRange(range);
 
-      const [weatherData, elevationData] = await Promise.all([weatherPromise, elevationPromise]);
+      const [weatherData, weaponElevationData, targetElevationData] = await Promise.all([
+        weatherPromise,
+        weaponElevationPromise,
+        targetElevationPromise,
+      ]);
 
       form.setValue('meteorologicalData', weatherData, { shouldValidate: true });
-      form.setValue('elevation', elevationData, { shouldValidate: true });
+      form.setValue('elevation', weaponElevationData, { shouldValidate: true });
+      form.setValue('targetElevation', targetElevationData, { shouldValidate: true });
 
       toast({ title: 'Data Updated', description: 'MET, elevation, and range have been populated.' });
     } catch (e: any) {
@@ -244,19 +251,34 @@ export function CalculatorPage() {
                   />
                 </div>
                 
-                <FormField
-                  control={form.control}
-                  name="elevation"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="flex items-center gap-2"><Mountain className="w-4 h-4" /> Weapon Elevation (meters)</FormLabel>
-                      <FormControl>
-                        <Input type="number" placeholder="e.g. 150" {...field} value={field.value ?? ''} onChange={field.onChange} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="elevation"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="flex items-center gap-2"><Mountain className="w-4 h-4" /> Own Elevation (m)</FormLabel>
+                        <FormControl>
+                          <Input type="number" placeholder="e.g. 150" {...field} value={field.value ?? ''} onChange={field.onChange} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="targetElevation"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="flex items-center gap-2"><Mountain className="w-4 h-4" /> Target Elevation (m)</FormLabel>
+                        <FormControl>
+                          <Input type="number" placeholder="e.g. 150" {...field} value={field.value ?? ''} onChange={field.onChange} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                      <FormField

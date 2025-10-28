@@ -6,6 +6,7 @@ export const FormSchema = z.object({
   targetCoordinates: z.string().min(1, "Target coordinates are required."),
   weaponCoordinates: z.string().min(1, "Weapon coordinates are required."),
   elevation: z.coerce.number().min(0, "Elevation must be a positive number."),
+  targetElevation: z.coerce.number().min(0, "Target elevation must be a positive number."),
   ammunitionType: z.string().min(1, "Ammunition type is required."),
   charge: z.string().min(1, "Charge is required."),
   projectileType: z.string().min(1, "Projectile type is required."),

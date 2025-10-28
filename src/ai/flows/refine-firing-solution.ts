@@ -18,6 +18,7 @@ const FiringSolutionReportInputSchema = z.object({
   targetCoordinates: z.string().describe('Target coordinates in decimal degrees.'),
   weaponCoordinates: z.string().describe('Weapon coordinates in decimal degrees.'),
   elevation: z.number().describe('Elevation of the weapon in meters.'),
+  targetElevation: z.number().describe('Elevation of the target in meters.'),
   ammunitionType: z.string().describe('Type of ammunition being used.'),
   charge: z.string().describe('The charge being used.'),
   projectileType: z.string().describe('The type of projectile being fired.'),
@@ -62,6 +63,7 @@ Weapon System: {{{weaponSystem}}}
 Target Coordinates: {{{targetCoordinates}}}
 Weapon Coordinates: {{{weaponCoordinates}}}
 Weapon Elevation: {{{elevation}}} meters
+Target Elevation: {{{targetElevation}}} meters
 Ammunition Type: {{{ammunitionType}}}
 Charge: {{{charge}}}
 Projectile Type: {{{projectileType}}}
