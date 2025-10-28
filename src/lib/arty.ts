@@ -12,6 +12,37 @@ const MUZZLE_VELOCITIES: Record<string, number> = {
 };
 
 /**
+ * Calculates the distance between two lat/lon points in meters (Haversine formula).
+ * @param coord1 "lat, lon"
+ * @param coord2 "lat, lon"
+ * @returns distance in meters
+ */
+export function getDistance(coord1: string, coord2: string): number {
+    const [lat1, lon1] = coord1.split(',').map(s => parseFloat(s.trim()));
+    const [lat2, lon2] = coord2.split(',').map(s => parseFloat(s.trim()));
+
+    if (isNaN(lat1) || isNaN(lon1) || isNaN(lat2) || isNaN(lon2)) {
+        // Return a simulated range if coordinates are not valid numbers
+        return (Math.random() * 20000) + 10000;
+    }
+
+    const R = 6371e3; // metres
+    const φ1 = lat1 * Math.PI/180; // φ, λ in radians
+    const φ2 = lat2 * Math.PI/180;
+    const Δφ = (lat2-lat1) * Math.PI/180;
+    const Δλ = (lon2-lon1) * Math.PI/180;
+
+    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+              Math.cos(φ1) * Math.cos(φ2) *
+              Math.sin(Δλ/2) * Math.sin(Δλ/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+    const d = R * c; // in metres
+    return d;
+}
+
+
+/**
  * Simulates a ballistic calculation.
  * This is a simplified model for demonstration purposes and does not represent
  * a real-world, accurate firing solution. It uses basic physics in a vacuum.
@@ -22,10 +53,8 @@ const MUZZLE_VELOCITIES: Record<string, number> = {
 export function calculateFiringSolution(data: z.infer<typeof FormSchema>): FiringSolution {
   const muzzleVelocity = MUZZLE_VELOCITIES[data.weaponSystem] || 827;
   
-  // 1. Simulate Range
-  // In a real app, this would be calculated from coordinates.
-  // For demo, we'll generate a random-ish range.
-  const range = (parseInt(data.weaponCoordinates.slice(-2)) / 100) * 20000 + 10000; // 10km to 30km based on coords
+  // 1. Calculate Range from coordinates
+  const range = getDistance(data.weaponCoordinates, data.targetCoordinates);
 
   // 2. Simulate Azimuth
   // Again, would be calculated from coordinates.

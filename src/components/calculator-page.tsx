@@ -54,7 +54,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 import { FormSchema, type FiringSolution, type RefinedFiringSolution } from '@/lib/types';
-import { calculateFiringSolution, fetchWeatherData, fetchElevationData } from '@/lib/arty';
+import { calculateFiringSolution, fetchWeatherData, fetchElevationData, getDistance } from '@/lib/arty';
 import { getRefinedSolution } from '@/app/actions';
 
 const WEAPON_SYSTEMS = ['M777 Howitzer', 'AS-90', 'M109 Paladin', 'CAESAR'];
@@ -66,7 +66,8 @@ export function CalculatorPage() {
   const [solution, setSolution] = useState<FiringSolution | null>(null);
   const [refinedSolution, setRefinedSolution] = useState<RefinedFiringSolution | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
-  const [isFetchingWeather, setIsFetchingWeather] = useState(false);
+  const [isFetchingData, setIsFetchingData] = useState(false);
+  const [fetchedRange, setFetchedRange] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
@@ -90,6 +91,7 @@ export function CalculatorPage() {
     setError(null);
     setSolution(null);
     setRefinedSolution(null);
+    setFetchedRange(null);
 
     try {
       // Simulate calculation delay
@@ -127,29 +129,32 @@ export function CalculatorPage() {
   }
 
   const handleFetchData = async () => {
-    setIsFetchingWeather(true);
+    setIsFetchingData(true);
+    setFetchedRange(null);
     const targetCoords = form.getValues('targetCoordinates');
     const weaponCoords = form.getValues('weaponCoordinates');
-    toast({ title: 'Fetching Data...', description: `Getting MET and elevation data.` });
+    toast({ title: 'Fetching Data...', description: `Getting MET, elevation, and range data.` });
 
     try {
       const weatherPromise = fetchWeatherData(targetCoords);
       const elevationPromise = fetchElevationData(weaponCoords);
+      const range = getDistance(weaponCoords, targetCoords);
+      setFetchedRange(range);
 
       const [weatherData, elevationData] = await Promise.all([weatherPromise, elevationPromise]);
 
       form.setValue('meteorologicalData', weatherData, { shouldValidate: true });
       form.setValue('elevation', elevationData, { shouldValidate: true });
 
-      toast({ title: 'Data Updated', description: 'MET data and weapon elevation have been populated.' });
+      toast({ title: 'Data Updated', description: 'MET, elevation, and range have been populated.' });
     } catch (e: any) {
         toast({
             variant: 'destructive',
             title: 'Failed to Fetch Data',
-            description: e.message || 'Could not retrieve weather or elevation data.'
+            description: e.message || 'Could not retrieve required data.'
         });
     } finally {
-      setIsFetchingWeather(false);
+      setIsFetchingData(false);
     }
   };
   
@@ -301,8 +306,8 @@ export function CalculatorPage() {
                     <FormItem>
                       <div className="flex justify-between items-center">
                         <FormLabel className="flex items-center gap-2"><Wind className="w-4 h-4" /> MET Data</FormLabel>
-                        <Button type="button" variant="ghost" size="sm" onClick={handleFetchData} disabled={isFetchingWeather}>
-                          {isFetchingWeather ? 'Fetching...' : 'Fetch Data'}
+                        <Button type="button" variant="ghost" size="sm" onClick={handleFetchData} disabled={isFetchingData}>
+                          {isFetchingData ? 'Fetching...' : 'Fetch Data'}
                         </Button>
                       </div>
                       <FormControl>
@@ -334,7 +339,7 @@ export function CalculatorPage() {
                   )}
                 />
                 
-                <Button type="submit" className="w-full" disabled={isCalculating || isFetchingWeather}>
+                <Button type="submit" className="w-full" disabled={isCalculating || isFetchingData}>
                   {isCalculating ? 'Calculating...' : 'Calculate Firing Solution'}
                   <ChevronRight className="w-4 h-4 ml-2" />
                 </Button>
@@ -354,7 +359,7 @@ export function CalculatorPage() {
 
           {isCalculating && <ResultsSkeleton refineWithAI={form.getValues('refineWithAI')} />}
           
-          {!isCalculating && !solution && <InitialState />}
+          {!isCalculating && !solution && <InitialState range={fetchedRange} isFetching={isFetchingData} />}
 
           {solution && (
              <Card className="shadow-lg">
@@ -402,13 +407,29 @@ const SolutionMetric = ({ icon: Icon, label, value, unit, highlight = false }: {
     </div>
 );
 
-const InitialState = () => (
+const InitialState = ({ range, isFetching }: { range: number | null, isFetching: boolean }) => (
     <Card className="flex flex-col items-center justify-center text-center p-8 min-h-[300px] border-dashed">
-        <Target className="w-16 h-16 text-muted-foreground/50 mb-4" />
-        <CardTitle className="font-headline">Awaiting Target Data</CardTitle>
-        <CardDescription>Enter mission parameters and calculate a solution.</CardDescription>
+      {(isFetching || range) ? (
+        <>
+          <Ruler className="w-16 h-16 text-muted-foreground/50 mb-4" />
+          <CardTitle className="font-headline">Estimated Range</CardTitle>
+          {isFetching ? (
+            <Skeleton className="h-7 w-32 mt-2" />
+          ) : (
+            <CardDescription>
+              <span className="text-xl font-bold text-foreground">{(range! / 1000).toFixed(2)}</span> km
+            </CardDescription>
+          )}
+        </>
+      ) : (
+        <>
+          <Target className="w-16 h-16 text-muted-foreground/50 mb-4" />
+          <CardTitle className="font-headline">Awaiting Target Data</CardTitle>
+          <CardDescription>Enter mission parameters and calculate a solution.</CardDescription>
+        </>
+      )}
     </Card>
-);
+  );
 
 const ResultsSkeleton = ({ refineWithAI }: { refineWithAI: boolean }) => (
     <div className="space-y-8">
