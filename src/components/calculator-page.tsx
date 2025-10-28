@@ -54,7 +54,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 import { FormSchema, type FiringSolution, type RefinedFiringSolution } from '@/lib/types';
-import { calculateFiringSolution, fetchWeatherData } from '@/lib/arty';
+import { calculateFiringSolution, fetchWeatherData, fetchElevationData } from '@/lib/arty';
 import { getRefinedSolution } from '@/app/actions';
 
 const WEAPON_SYSTEMS = ['M777 Howitzer', 'AS-90', 'M109 Paladin', 'CAESAR'];
@@ -66,6 +66,7 @@ export function CalculatorPage() {
   const [solution, setSolution] = useState<FiringSolution | null>(null);
   const [refinedSolution, setRefinedSolution] = useState<RefinedFiringSolution | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
+  const [isFetchingWeather, setIsFetchingWeather] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
@@ -125,12 +126,31 @@ export function CalculatorPage() {
     }
   }
 
-  const handleFetchWeather = async () => {
-    const coords = form.getValues('targetCoordinates');
-    toast({ title: 'Fetching Weather...', description: `Getting data for ${coords}` });
-    const weatherData = await fetchWeatherData(coords);
-    form.setValue('meteorologicalData', weatherData, { shouldValidate: true });
-    toast({ title: 'Weather Updated', description: 'Meteorological data has been populated.' });
+  const handleFetchData = async () => {
+    setIsFetchingWeather(true);
+    const targetCoords = form.getValues('targetCoordinates');
+    const weaponCoords = form.getValues('weaponCoordinates');
+    toast({ title: 'Fetching Data...', description: `Getting MET and elevation data.` });
+
+    try {
+      const weatherPromise = fetchWeatherData(targetCoords);
+      const elevationPromise = fetchElevationData(weaponCoords);
+
+      const [weatherData, elevationData] = await Promise.all([weatherPromise, elevationPromise]);
+
+      form.setValue('meteorologicalData', weatherData, { shouldValidate: true });
+      form.setValue('elevation', elevationData, { shouldValidate: true });
+
+      toast({ title: 'Data Updated', description: 'MET data and weapon elevation have been populated.' });
+    } catch (e: any) {
+        toast({
+            variant: 'destructive',
+            title: 'Failed to Fetch Data',
+            description: e.message || 'Could not retrieve weather or elevation data.'
+        });
+    } finally {
+      setIsFetchingWeather(false);
+    }
   };
   
   const AsciiArt = () => (
@@ -222,7 +242,7 @@ export function CalculatorPage() {
                     <FormItem>
                       <FormLabel className="flex items-center gap-2"><Mountain className="w-4 h-4" /> Weapon Elevation (meters)</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="e.g. 150" {...field} />
+                        <Input type="number" placeholder="e.g. 150" {...field} value={field.value ?? ''} onChange={field.onChange} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -281,7 +301,9 @@ export function CalculatorPage() {
                     <FormItem>
                       <div className="flex justify-between items-center">
                         <FormLabel className="flex items-center gap-2"><Wind className="w-4 h-4" /> MET Data</FormLabel>
-                        <Button type="button" variant="ghost" size="sm" onClick={handleFetchWeather}>Fetch Weather</Button>
+                        <Button type="button" variant="ghost" size="sm" onClick={handleFetchData} disabled={isFetchingWeather}>
+                          {isFetchingWeather ? 'Fetching...' : 'Fetch Data'}
+                        </Button>
                       </div>
                       <FormControl>
                         <Textarea placeholder="Enter meteorological data..." className="min-h-[100px] resize-none" {...field} />
@@ -312,7 +334,7 @@ export function CalculatorPage() {
                   )}
                 />
                 
-                <Button type="submit" className="w-full" disabled={isCalculating}>
+                <Button type="submit" className="w-full" disabled={isCalculating || isFetchingWeather}>
                   {isCalculating ? 'Calculating...' : 'Calculate Firing Solution'}
                   <ChevronRight className="w-4 h-4 ml-2" />
                 </Button>

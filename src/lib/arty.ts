@@ -76,3 +76,30 @@ Pressure: ${pressure} hPa
 Wind: ${windSpeed} kph from ${windDir}°
 `;
 }
+
+
+/**
+ * Fetches elevation data from Open Topo Data API.
+ * @param coordinates - The coordinates to fetch elevation for (e.g., "40.7128, -74.0060").
+ * @returns A promise that resolves to the elevation in meters.
+ */
+export async function fetchElevationData(coordinates: string): Promise<number> {
+  try {
+    const [lat, lon] = coordinates.split(',').map(s => s.trim());
+    if (!lat || !lon) {
+      throw new Error('Invalid coordinates for elevation fetch.');
+    }
+    const response = await fetch(`https://api.opentopodata.org/v1/ned10m?locations=${lat},${lon}`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch elevation data: ${response.statusText}`);
+    }
+    const data = await response.json();
+    if (data.status !== 'OK' || !data.results || data.results.length === 0) {
+      throw new Error('Could not retrieve elevation from API response.');
+    }
+    return Math.round(data.results[0].elevation);
+  } catch (error) {
+    console.error("Error fetching elevation data:", error);
+    throw new Error("Could not fetch elevation data. Please enter it manually.");
+  }
+}
