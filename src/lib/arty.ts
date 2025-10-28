@@ -1,14 +1,67 @@
+
 import type { z } from 'zod';
 import type { FiringSolution, FormSchema } from './types';
 
 const GRAVITY = 9.80665; // m/s^2
 
-// Map weapon systems to muzzle velocities (in m/s) for a standard round.
-const MUZZLE_VELOCITIES: Record<string, number> = {
-  'M777 Howitzer': 827,
-  'AS-90': 827,
-  'M109 Paladin': 827,
-  'CAESAR': 930,
+interface WeaponData {
+    muzzleVelocities: Record<string, number>;
+    ammo: string[];
+    projectiles: string[];
+    charges: string[];
+    chargeLabel: string;
+}
+
+export const WEAPON_SYSTEMS: Record<string, WeaponData> = {
+    'M777 Howitzer': {
+        muzzleVelocities: { 'Green': 381, 'White': 563, 'Red': 827 },
+        ammo: ['M795 HE', 'M549 HERA', 'Excalibur'],
+        projectiles: ['Standard', 'Base Bleed', 'Rocket Assisted'],
+        charges: ['Green', 'White', 'Red'],
+        chargeLabel: 'Charge'
+    },
+    'AS-90': {
+        muzzleVelocities: { 'Green': 381, 'White': 563, 'Red': 827 },
+        ammo: ['L15 HE', 'M107 HE'],
+        projectiles: ['Standard', 'Base Bleed'],
+        charges: ['Green', 'White', 'Red'],
+        chargeLabel: 'Charge'
+    },
+    'M109 Paladin': {
+        muzzleVelocities: { 'Green': 381, 'White': 563, 'Red': 827 },
+        ammo: ['M795 HE', 'M549 HERA'],
+        projectiles: ['Standard', 'Rocket Assisted'],
+        charges: ['Green', 'White', 'Red'],
+        chargeLabel: 'Charge'
+    },
+    'CAESAR': {
+        muzzleVelocities: { 'Charge 1': 350, 'Charge 2': 550, 'Charge 3': 930 },
+        ammo: ['LU 211 HE-BB', 'OE 155 F1'],
+        projectiles: ['Standard', 'Base Bleed'],
+        charges: ['Charge 1', 'Charge 2', 'Charge 3'],
+        chargeLabel: 'Charge'
+    },
+    '60mm Mortar': {
+        muzzleVelocities: { 'Ring 0': 70, 'Ring 1': 100, 'Ring 2': 130, 'Ring 3': 150 },
+        ammo: ['M720 HE', 'M888 HE'],
+        projectiles: ['Standard'],
+        charges: ['Ring 0', 'Ring 1', 'Ring 2', 'Ring 3'],
+        chargeLabel: 'Charge Ring'
+    },
+    '81mm Mortar': {
+        muzzleVelocities: { 'Ring 0': 80, 'Ring 1': 120, 'Ring 2': 160, 'Ring 3': 200, 'Ring 4': 240, 'Ring 5': 270 },
+        ammo: ['M821 HE', 'M889A1 HE'],
+        projectiles: ['Standard'],
+        charges: ['Ring 0', 'Ring 1', 'Ring 2', 'Ring 3', 'Ring 4', 'Ring 5'],
+        chargeLabel: 'Charge Ring'
+    },
+    '120mm Mortar': {
+        muzzleVelocities: { 'Ring 1': 122, 'Ring 2': 174, 'Ring 3': 223, 'Ring 4': 267 },
+        ammo: ['M934 HE', 'M929 Smoke'],
+        projectiles: ['Standard'],
+        charges: ['Ring 1', 'Ring 2', 'Ring 3', 'Ring 4'],
+        chargeLabel: 'Charge Ring'
+    },
 };
 
 /**
@@ -23,7 +76,7 @@ export function getDistance(coord1: string, coord2: string): number {
 
     if (isNaN(lat1) || isNaN(lon1) || isNaN(lat2) || isNaN(lon2)) {
         // Return a simulated range if coordinates are not valid numbers
-        return (Math.random() * 20000) + 10000;
+        return (Math.random() * 20000) + 2000;
     }
 
     const R = 6371e3; // metres
@@ -51,7 +104,15 @@ export function getDistance(coord1: string, coord2: string): number {
  * @returns A plausible but simulated firing solution.
  */
 export function calculateFiringSolution(data: z.infer<typeof FormSchema>): FiringSolution {
-  const muzzleVelocity = MUZZLE_VELOCITIES[data.weaponSystem] || 827;
+  const weaponData = WEAPON_SYSTEMS[data.weaponSystem];
+  if (!weaponData) {
+      throw new Error(`Invalid weapon system: ${data.weaponSystem}`);
+  }
+
+  const muzzleVelocity = weaponData.muzzleVelocities[data.charge];
+  if (!muzzleVelocity) {
+      throw new Error(`Invalid charge "${data.charge}" for weapon system "${data.weaponSystem}"`);
+  }
   
   // 1. Calculate Range from coordinates
   const range = getDistance(data.weaponCoordinates, data.targetCoordinates);
@@ -133,3 +194,5 @@ export async function fetchElevationData(coordinates: string): Promise<number> {
     return Math.round(Math.random() * 300);
   }
 }
+
+    

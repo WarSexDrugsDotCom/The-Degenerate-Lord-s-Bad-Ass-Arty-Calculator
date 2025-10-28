@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { z } from 'zod';
@@ -55,13 +56,10 @@ import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 import { FormSchema, type FiringSolution, type FiringSolutionReport } from '@/lib/types';
-import { calculateFiringSolution, fetchWeatherData, fetchElevationData, getDistance } from '@/lib/arty';
+import { calculateFiringSolution, fetchWeatherData, fetchElevationData, getDistance, WEAPON_SYSTEMS } from '@/lib/arty';
 import { getFiringSolutionReport } from '@/app/actions';
 
-const WEAPON_SYSTEMS = ['M777 Howitzer', 'AS-90', 'M109 Paladin', 'CAESAR'];
-const AMMO_TYPES = ['M795 HE', 'M549 HERA', 'Excalibur'];
-const CHARGES = ['Green', 'White', 'Red'];
-const PROJECTILE_TYPES = ['Standard', 'Base Bleed', 'Rocket Assisted'];
+const getSystems = () => Object.keys(WEAPON_SYSTEMS);
 
 export function CalculatorPage() {
   const [solution, setSolution] = useState<FiringSolution | null>(null);
@@ -72,23 +70,35 @@ export function CalculatorPage() {
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
+  const defaultWeapon = getSystems()[0];
+
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
-      weaponSystem: 'M777 Howitzer',
+      weaponSystem: defaultWeapon,
       targetCoordinates: '40.7128, -74.0060',
       weaponCoordinates: '40.7128, -74.0070',
       elevation: 10,
       targetElevation: 10,
-      ammunitionType: 'M795 HE',
-      charge: 'White',
-      projectileType: 'Standard',
+      ammunitionType: WEAPON_SYSTEMS[defaultWeapon].ammo[0],
+      charge: WEAPON_SYSTEMS[defaultWeapon].charges[0],
+      projectileType: WEAPON_SYSTEMS[defaultWeapon].projectiles[0],
       meteorologicalData: 'Standard atmosphere, no wind.',
       refineWithAI: true,
     },
   });
 
-  const useAI = form.watch('refineWithAI');
+  const selectedWeaponSystem = form.watch('weaponSystem');
+  const refineWithAI = form.watch('refineWithAI');
+
+  const weaponData = WEAPON_SYSTEMS[selectedWeaponSystem] || WEAPON_SYSTEMS[defaultWeapon];
+
+  useEffect(() => {
+    form.setValue('ammunitionType', weaponData.ammo[0]);
+    form.setValue('charge', weaponData.charges[0]);
+    form.setValue('projectileType', weaponData.projectiles[0]);
+  }, [selectedWeaponSystem, form, weaponData]);
+
 
   async function onSubmit(data: z.infer<typeof FormSchema>) {
     setIsCalculating(true);
@@ -210,7 +220,7 @@ export function CalculatorPage() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {WEAPON_SYSTEMS.map((system) => (
+                          {getSystems().map((system) => (
                             <SelectItem key={system} value={system}>
                               {system}
                             </SelectItem>
@@ -259,7 +269,7 @@ export function CalculatorPage() {
                       <FormItem>
                         <FormLabel className="flex items-center gap-2"><Mountain className="w-4 h-4" /> Own Elevation (m)</FormLabel>
                         <FormControl>
-                          <Input type="number" placeholder="e.g. 150" {...field} value={field.value ?? ''} onChange={field.onChange} />
+                          <Input type="number" placeholder="e.g. 150" {...field} value={field.value ?? ''} onChange={(e) => field.onChange(parseInt(e.target.value) || 0)} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -272,7 +282,7 @@ export function CalculatorPage() {
                       <FormItem>
                         <FormLabel className="flex items-center gap-2"><Mountain className="w-4 h-4" /> Target Elevation (m)</FormLabel>
                         <FormControl>
-                          <Input type="number" placeholder="e.g. 150" {...field} value={field.value ?? ''} onChange={field.onChange} />
+                          <Input type="number" placeholder="e.g. 150" {...field} value={field.value ?? ''} onChange={(e) => field.onChange(parseInt(e.target.value) || 0)} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -287,9 +297,9 @@ export function CalculatorPage() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel className='flex items-center gap-2'><Box className="w-4 h-4" /> Ammo</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <Select onValueChange={field.onChange} value={field.value}>
                               <FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl>
-                              <SelectContent>{AMMO_TYPES.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}</SelectContent>
+                              <SelectContent>{weaponData.ammo.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}</SelectContent>
                             </Select>
                             <FormMessage />
                           </FormItem>
@@ -301,9 +311,9 @@ export function CalculatorPage() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel className='flex items-center gap-2'><Layers className="w-4 h-4" /> Projectile</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <Select onValueChange={field.onChange} value={field.value}>
                               <FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl>
-                              <SelectContent>{PROJECTILE_TYPES.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
+                              <SelectContent>{weaponData.projectiles.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
                             </Select>
                             <FormMessage />
                           </FormItem>
@@ -314,10 +324,10 @@ export function CalculatorPage() {
                         name="charge"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className='flex items-center gap-2'><Hash className="w-4 h-4" /> Charge</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormLabel className='flex items-center gap-2'><Hash className="w-4 h-4" /> {weaponData.chargeLabel}</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
                               <FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl>
-                              <SelectContent>{CHARGES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                              <SelectContent>{weaponData.charges.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
                             </Select>
                              <FormMessage />
                           </FormItem>
@@ -383,11 +393,11 @@ export function CalculatorPage() {
              </Alert>
           )}
 
-          {isCalculating && <ResultsSkeleton useAI={useAI} />}
+          {isCalculating && <ResultsSkeleton useAI={refineWithAI} />}
           
           {!isCalculating && (!solution && !solutionReport) && <InitialState range={fetchedRange} isFetching={isFetchingData} />}
 
-          {solution && !useAI && (
+          {solution && !refineWithAI && (
              <Card className="shadow-lg">
                 <CardHeader>
                     <CardTitle>Standard Ballistic Solution</CardTitle>
@@ -480,3 +490,5 @@ const ResultsSkeleton = ({ useAI }: { useAI: boolean }) => (
         </Card>
     </div>
 );
+
+    

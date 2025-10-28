@@ -1,3 +1,4 @@
+
 import { z } from 'zod';
 import type { FiringSolutionReportOutput } from '@/ai/flows/refine-firing-solution';
 
@@ -22,3 +23,5 @@ export interface FiringSolution {
 }
 
 export type FiringSolutionReport = FiringSolutionReportOutput;
+
+    
