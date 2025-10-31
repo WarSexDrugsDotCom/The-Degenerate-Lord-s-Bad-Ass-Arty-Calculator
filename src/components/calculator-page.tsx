@@ -22,6 +22,8 @@ import {
   Sparkles,
   Link,
   ShieldCheck,
+  Globe,
+  Grid3x3,
 } from 'lucide-react';
 
 import {
@@ -55,9 +57,10 @@ import { Switch } from '@/components/ui/switch';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
-import { FormSchema, type FiringSolution, type FiringSolutionReport } from '@/lib/types';
-import { calculateFiringSolution, fetchWeatherData, fetchElevationData, getDistance, WEAPON_SYSTEMS } from '@/lib/arty';
+import { FormSchema, type FormValues, type FiringSolution, type FiringSolutionReport } from '@/lib/types';
+import { calculateFiringSolution, fetchWeatherData, fetchElevationData, getDistance, getLatLonString, WEAPON_SYSTEMS } from '@/lib/arty';
 import { getFiringSolutionReport } from '@/app/actions';
 
 const getSystems = () => Object.keys(WEAPON_SYSTEMS);
@@ -73,12 +76,17 @@ export function CalculatorPage() {
 
   const defaultWeapon = getSystems()[0];
 
-  const form = useForm<z.infer<typeof FormSchema>>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
       weaponSystem: defaultWeapon,
-      targetCoordinates: '40.7128, -74.0060',
-      weaponCoordinates: '40.7128, -74.0070',
+      coordinateSystem: 'latlon',
+      weaponLat: 40.7128,
+      weaponLon: -74.0070,
+      targetLat: 40.7128,
+      targetLon: -74.0060,
+      weaponMgrs: '',
+      targetMgrs: '',
       elevation: 10,
       targetElevation: 10,
       ammunitionType: WEAPON_SYSTEMS[defaultWeapon].ammo[0],
@@ -91,6 +99,7 @@ export function CalculatorPage() {
 
   const selectedWeaponSystem = form.watch('weaponSystem');
   const refineWithAI = form.watch('refineWithAI');
+  const coordinateSystem = form.watch('coordinateSystem');
 
   const weaponData = WEAPON_SYSTEMS[selectedWeaponSystem] || WEAPON_SYSTEMS[defaultWeapon];
 
@@ -101,7 +110,7 @@ export function CalculatorPage() {
   }, [selectedWeaponSystem, form, weaponData]);
 
 
-  async function onSubmit(data: z.infer<typeof FormSchema>) {
+  async function onSubmit(data: FormValues) {
     setIsCalculating(true);
     setError(null);
     setSolution(null);
@@ -114,13 +123,20 @@ export function CalculatorPage() {
 
       if (data.refineWithAI) {
         const aiInput = {
-          ...data,
+          weaponSystem: data.weaponSystem,
+          elevation: data.elevation,
+          targetElevation: data.targetElevation,
+          ammunitionType: data.ammunitionType,
+          charge: data.charge,
+          projectileType: data.projectileType,
+          meteorologicalData: data.meteorologicalData,
           initialElevation: initialSolution.elevation,
           initialAzimuth: initialSolution.azimuth,
           timeOfFlight: initialSolution.timeOfFlight,
           range: initialSolution.range,
         };
-        const result = await getFiringSolutionReport(aiInput);
+        // Pass the raw form data separately for secure coordinate handling
+        const result = await getFiringSolutionReport(aiInput, data);
 
         if ('error' in result) {
           throw new Error(result.error);
@@ -143,28 +159,30 @@ export function CalculatorPage() {
   const handleFetchData = async () => {
     setIsFetchingData(true);
     setFetchedRange(null);
-    const targetCoords = form.getValues('targetCoordinates');
-    const weaponCoords = form.getValues('weaponCoordinates');
+    const values = form.getValues();
     toast({ title: 'Fetching Data...', description: `Getting MET, elevation, and range data.` });
 
     try {
-      const weatherPromise = fetchWeatherData(targetCoords);
-      const weaponElevationPromise = fetchElevationData(weaponCoords);
-      const targetElevationPromise = fetchElevationData(targetCoords);
-      const range = getDistance(weaponCoords, targetCoords);
-      setFetchedRange(range);
+        const weaponCoords = getLatLonString(values.coordinateSystem, values.weaponLat, values.weaponLon, values.weaponMgrs);
+        const targetCoords = getLatLonString(values.coordinateSystem, values.targetLat, values.targetLon, values.targetMgrs);
 
-      const [weatherData, weaponElevationData, targetElevationData] = await Promise.all([
-        weatherPromise,
-        weaponElevationPromise,
-        targetElevationPromise,
-      ]);
+        const weatherPromise = fetchWeatherData(targetCoords);
+        const weaponElevationPromise = fetchElevationData(weaponCoords);
+        const targetElevationPromise = fetchElevationData(targetCoords);
+        const range = getDistance(weaponCoords, targetCoords);
+        setFetchedRange(range);
 
-      form.setValue('meteorologicalData', weatherData, { shouldValidate: true });
-      form.setValue('elevation', weaponElevationData, { shouldValidate: true });
-      form.setValue('targetElevation', targetElevationData, { shouldValidate: true });
+        const [weatherData, weaponElevationData, targetElevationData] = await Promise.all([
+            weatherPromise,
+            weaponElevationPromise,
+            targetElevationPromise,
+        ]);
 
-      toast({ title: 'Data Updated', description: 'MET, elevation, and range have been populated.' });
+        form.setValue('meteorologicalData', weatherData, { shouldValidate: true });
+        form.setValue('elevation', weaponElevationData, { shouldValidate: true });
+        form.setValue('targetElevation', targetElevationData, { shouldValidate: true });
+
+        toast({ title: 'Data Updated', description: 'MET, elevation, and range have been populated.' });
     } catch (e: any) {
         toast({
             variant: 'destructive',
@@ -239,35 +257,85 @@ export function CalculatorPage() {
                     </FormItem>
                   )}
                 />
+                
+                <FormField
+                  control={form.control}
+                  name="coordinateSystem"
+                  render={({ field }) => (
+                    <FormItem className="space-y-3">
+                      <FormLabel>Coordinate System</FormLabel>
+                      <FormControl>
+                        <RadioGroup
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                          className="flex space-x-4"
+                        >
+                          <FormItem className="flex items-center space-x-2 space-y-0">
+                            <FormControl>
+                              <RadioGroupItem value="latlon" />
+                            </FormControl>
+                            <FormLabel className="font-normal flex items-center gap-2"><Globe className="w-4 h-4"/> Lat/Lon</FormLabel>
+                          </FormItem>
+                          <FormItem className="flex items-center space-x-2 space-y-0">
+                            <FormControl>
+                              <RadioGroupItem value="mgrs" />
+                            </FormControl>
+                            <FormLabel className="font-normal flex items-center gap-2"><Grid3x3 className="w-4 h-4"/> MGRS</FormLabel>
+                          </FormItem>
+                        </RadioGroup>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="weaponCoordinates"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="flex items-center gap-2"><LocateFixed className="w-4 h-4" /> Own Position</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Lat, Lon" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="targetCoordinates"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="flex items-center gap-2"><Target className="w-4 h-4"/> Target Position</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Lat, Lon" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+                {coordinateSystem === 'latlon' ? (
+                  <>
+                    <Card className="p-4 bg-background/50">
+                        <Label className="flex items-center gap-2 mb-2 text-sm"><LocateFixed className="w-4 h-4"/> Own Position</Label>
+                        <div className="grid grid-cols-2 gap-2">
+                           <FormField control={form.control} name="weaponLat" render={({field}) => (<FormItem><FormControl><Input placeholder="Latitude" type="number" {...field}/></FormControl><FormMessage/></FormItem>)}/>
+                           <FormField control={form.control} name="weaponLon" render={({field}) => (<FormItem><FormControl><Input placeholder="Longitude" type="number" {...field}/></FormControl><FormMessage/></FormItem>)}/>
+                        </div>
+                    </Card>
+                     <Card className="p-4 bg-background/50">
+                        <Label className="flex items-center gap-2 mb-2 text-sm"><Target className="w-4 h-4"/> Target Position</Label>
+                        <div className="grid grid-cols-2 gap-2">
+                           <FormField control={form.control} name="targetLat" render={({field}) => (<FormItem><FormControl><Input placeholder="Latitude" type="number" {...field}/></FormControl><FormMessage/></FormItem>)}/>
+                           <FormField control={form.control} name="targetLon" render={({field}) => (<FormItem><FormControl><Input placeholder="Longitude" type="number" {...field}/></FormControl><FormMessage/></FormItem>)}/>
+                        </div>
+                    </Card>
+                  </>
+                ) : (
+                  <>
+                    <FormField
+                        control={form.control}
+                        name="weaponMgrs"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="flex items-center gap-2"><LocateFixed className="w-4 h-4" /> Own Position (MGRS)</FormLabel>
+                            <FormControl>
+                              <Input placeholder="e.g. 18S UJ 23480 96270" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="targetMgrs"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="flex items-center gap-2"><Target className="w-4 h-4"/> Target Position (MGRS)</FormLabel>
+                            <FormControl>
+                              <Input placeholder="e.g. 18S UJ 23490 96280" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                  </>
+                )}
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <FormField

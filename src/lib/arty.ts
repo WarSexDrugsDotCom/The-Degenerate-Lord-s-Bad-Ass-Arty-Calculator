@@ -1,6 +1,6 @@
-
 import type { z } from 'zod';
-import type { FiringSolution, FormSchema } from './types';
+import type { FiringSolution, FormValues } from './types';
+import mgrs from 'mgrs';
 
 const GRAVITY = 9.80665; // m/s^2
 
@@ -86,6 +86,32 @@ function parseCoordinates(coordString: string): [number, number] {
     return [lat, lon];
 }
 
+/**
+ * Converts MGRS to a Lat/Lon string, or validates a Lat/Lon string.
+ * @param system The coordinate system used ('latlon' or 'mgrs').
+ * @param latlon The Lat/Lon string.
+ * @param mgrsStr The MGRS string.
+ * @returns A validated "lat, lon" string.
+ */
+export function getLatLonString(system: 'latlon' | 'mgrs', lat: number | undefined, lon: number | undefined, mgrsStr: string | undefined): string {
+    if (system === 'mgrs') {
+        if (!mgrsStr) throw new Error('MGRS coordinates are required.');
+        try {
+            const [lon, lat] = mgrs.toPoint(mgrsStr);
+            return `${lat}, ${lon}`;
+        } catch (e) {
+            throw new Error('Invalid MGRS coordinate string.');
+        }
+    }
+    
+    if (typeof lat === 'undefined' || typeof lon === 'undefined') {
+        throw new Error('Latitude and Longitude are required.');
+    }
+    const latlonStr = `${lat}, ${lon}`;
+    parseCoordinates(latlonStr); // This will throw an error if invalid
+    return latlonStr;
+}
+
 
 /**
  * Calculates the distance between two lat/lon points in meters (Haversine formula).
@@ -130,7 +156,7 @@ export function getDistance(coord1: string, coord2: string): number {
  * @param data - The form input data.
  * @returns A plausible but simulated firing solution.
  */
-export function calculateFiringSolution(data: z.infer<typeof FormSchema>): FiringSolution {
+export function calculateFiringSolution(data: FormValues): FiringSolution {
   const weaponData = WEAPON_SYSTEMS[data.weaponSystem];
   if (!weaponData) {
       throw new Error(`Invalid weapon system: ${data.weaponSystem}`);
@@ -141,12 +167,15 @@ export function calculateFiringSolution(data: z.infer<typeof FormSchema>): Firin
       throw new Error(`Invalid charge "${data.charge}" for weapon system "${data.weaponSystem}"`);
   }
   
+  const weaponCoords = getLatLonString(data.coordinateSystem, data.weaponLat, data.weaponLon, data.weaponMgrs);
+  const targetCoords = getLatLonString(data.coordinateSystem, data.targetLat, data.targetLon, data.targetMgrs);
+
   // 1. Calculate Range from coordinates
-  const range = getDistance(data.weaponCoordinates, data.targetCoordinates);
+  const range = getDistance(weaponCoords, targetCoords);
 
   // 2. Simulate Azimuth
   // Again, would be calculated from coordinates.
-  const azimuth = ((parseInt(data.targetCoordinates.slice(-2)) / 100) * 360);
+  const azimuth = ((parseInt(targetCoords.slice(-2)) / 100) * 360);
 
   // 3. Calculate Elevation (using simple vacuum ballistic equation)
   // angle = 0.5 * asin(g*x / v^2)

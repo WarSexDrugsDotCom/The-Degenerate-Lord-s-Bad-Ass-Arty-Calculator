@@ -88,5 +88,3 @@ const generateFiringSolutionReportFlow = ai.defineFlow(
     return output!;
   }
 );
-
-    
