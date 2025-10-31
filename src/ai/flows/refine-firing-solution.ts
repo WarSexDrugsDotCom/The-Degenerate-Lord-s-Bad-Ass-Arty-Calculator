@@ -50,13 +50,21 @@ const generateFiringSolutionPrompt = ai.definePrompt({
 
 **Format:**
 Weapon System: [Weapon System]
+
 Projectiles: [Projectile Type] [Ammunition Type]
+
 Charge: [Charge or Charge Ring]
+
 Range to Target: [Range in meters] meters
+
 Grid Azimuth: [Azimuth in mils] mils
+
 Quadrant Elevation (QE): [Elevation in mils] mils
+
 Time of Flight (TOF): Approximately [Time of flight] seconds
+
 Meteorological Corrections Applied: [Summarize relevant MET data]
+
 Site Picture: [Note any significant elevation difference between weapon and target]
 
 **Mission Data:**
