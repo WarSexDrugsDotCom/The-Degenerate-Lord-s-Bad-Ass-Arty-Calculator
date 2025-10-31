@@ -176,7 +176,7 @@ export function CalculatorPage() {
   };
   
   const AsciiArt = () => (
-    <code className="block text-center text-muted-foreground font-code text-xs md:text-sm whitespace-pre">
+    <code className="block text-center text-muted-foreground font-code text-xs md:text-sm whitespace-pre-wrap">
       (⌐▨_▨)=ε/̵͇̿̿/'̿'̿ ̿ ̿̿ ̿̿ ̿̿ (╥﹏╥)
     </code>
   );
@@ -490,5 +490,3 @@ const ResultsSkeleton = ({ useAI }: { useAI: boolean }) => (
         </Card>
     </div>
 );
-
-    
