@@ -8,7 +8,7 @@ export async function getFiringSolutionReport(input: FiringSolutionReportInput):
     const output = await generateFiringSolutionReport(input);
     return output;
   } catch (e: any) {
-    console.error(e);
+    // console.error(e); // Removed to prevent logging of sensitive data
     return { error: e.message || 'An unknown error occurred while generating the solution report.' };
   }
 }
