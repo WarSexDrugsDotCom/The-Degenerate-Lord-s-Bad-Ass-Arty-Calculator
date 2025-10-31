@@ -189,7 +189,7 @@ export function CalculatorPage() {
           The Degenerate Lord&apos;s Bad Ass Arty Calculator
         </h1>
         <p className="text-muted-foreground">Precision artillery solutions with optional AI-powered analysis.</p>
-        <p className="text-xs text-muted-foreground/80 flex items-center justify-center gap-1.5"><ShieldCheck className="w-3.5 h-3.5"/> We ensure that coordinates will not be written to the server logs, protecting your users' privacy.</p>
+        <p className="text-xs text-muted-foreground/80 flex items-center justify-center gap-1.5"><ShieldCheck className="w-3.5 h-3.5"/> We ensure that coordinates will not be written to the server logs, protecting our users' privacy.</p>
         <div className="flex items-center justify-center gap-4 pt-2">
           <a href="https://warsexdrugs.com/" target="_blank" rel="noopener noreferrer" className="text-sm text-accent hover:underline flex items-center justify-center gap-1">
             <Link className="w-4 h-4" />
