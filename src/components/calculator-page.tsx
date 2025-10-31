@@ -188,10 +188,16 @@ export function CalculatorPage() {
           The Degenerate Lord&apos;s Bad Ass Arty Calculator
         </h1>
         <p className="text-muted-foreground">Precision artillery solutions with optional AI-powered analysis.</p>
-        <a href="https://warsexdrugs.com/" target="_blank" rel="noopener noreferrer" className="text-sm text-accent hover:underline flex items-center justify-center gap-1">
-          <Link className="w-4 h-4" />
-          warsexdrugs.com
-        </a>
+        <div className="flex items-center justify-center gap-4">
+          <a href="https://warsexdrugs.com/" target="_blank" rel="noopener noreferrer" className="text-sm text-accent hover:underline flex items-center justify-center gap-1">
+            <Link className="w-4 h-4" />
+            WarSexDrugs.com
+          </a>
+          <a href="https://dopedoohickeys.com/" target="_blank" rel="noopener noreferrer" className="text-sm text-accent hover:underline flex items-center justify-center gap-1">
+            <Link className="w-4 h-4" />
+            DopeDoohickeys.com
+          </a>
+        </div>
         <AsciiArt />
       </header>
 
