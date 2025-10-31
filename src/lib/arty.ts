@@ -65,33 +65,60 @@ export const WEAPON_SYSTEMS: Record<string, WeaponData> = {
 };
 
 /**
+ * Validates and parses a coordinate string.
+ * @param coordString "lat, lon"
+ * @returns [lat: number, lon: number]
+ * @throws Error if format is invalid
+ */
+function parseCoordinates(coordString: string): [number, number] {
+    const parts = coordString.split(',').map(s => s.trim());
+    if (parts.length !== 2) {
+        throw new Error('Invalid coordinate format. Use "lat, lon".');
+    }
+    const lat = parseFloat(parts[0]);
+    const lon = parseFloat(parts[1]);
+    if (isNaN(lat) || isNaN(lon)) {
+        throw new Error('Invalid coordinate format. Latitude and Longitude must be numbers.');
+    }
+    if (lat < -90 || lat > 90 || lon < -180 || lon > 180) {
+        throw new Error('Invalid coordinate values. Latitude must be -90 to 90, Longitude -180 to 180.');
+    }
+    return [lat, lon];
+}
+
+
+/**
  * Calculates the distance between two lat/lon points in meters (Haversine formula).
  * @param coord1 "lat, lon"
  * @param coord2 "lat, lon"
  * @returns distance in meters
  */
 export function getDistance(coord1: string, coord2: string): number {
-    const [lat1, lon1] = coord1.split(',').map(s => parseFloat(s.trim()));
-    const [lat2, lon2] = coord2.split(',').map(s => parseFloat(s.trim()));
+    try {
+        const [lat1, lon1] = parseCoordinates(coord1);
+        const [lat2, lon2] = parseCoordinates(coord2);
 
-    if (isNaN(lat1) || isNaN(lon1) || isNaN(lat2) || isNaN(lon2)) {
-        // Return a simulated range if coordinates are not valid numbers
+        const R = 6371e3; // metres
+        const φ1 = lat1 * Math.PI/180; // φ, λ in radians
+        const φ2 = lat2 * Math.PI/180;
+        const Δφ = (lat2-lat1) * Math.PI/180;
+        const Δλ = (lon2-lon1) * Math.PI/180;
+
+        const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+                  Math.cos(φ1) * Math.cos(φ2) *
+                  Math.sin(Δλ/2) * Math.sin(Δλ/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+        const d = R * c; // in metres
+        return d;
+    } catch (e: any) {
+        // If parsing fails, re-throw the specific error from parseCoordinates
+        if (e.message.startsWith('Invalid coordinate')) {
+            throw e;
+        }
+        // For other unexpected errors, return a simulated range.
         return (Math.random() * 20000) + 2000;
     }
-
-    const R = 6371e3; // metres
-    const φ1 = lat1 * Math.PI/180; // φ, λ in radians
-    const φ2 = lat2 * Math.PI/180;
-    const Δφ = (lat2-lat1) * Math.PI/180;
-    const Δλ = (lon2-lon1) * Math.PI/180;
-
-    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-              Math.cos(φ1) * Math.cos(φ2) *
-              Math.sin(Δλ/2) * Math.sin(Δλ/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-
-    const d = R * c; // in metres
-    return d;
 }
 
 
@@ -154,13 +181,16 @@ export async function fetchWeatherData(coordinates: string): Promise<string> {
   // Simulate network delay
   await new Promise(resolve => setTimeout(resolve, 500));
 
+  // Validate coordinates before creating the string.
+  const [lat, lon] = parseCoordinates(coordinates);
+
   const windSpeed = (Math.random() * 15 + 5).toFixed(1); // 5-20 kph
   const windDir = Math.floor(Math.random() * 360);
   const temp = (Math.random() * 20 + 5).toFixed(1); // 5-25 C
   const pressure = (Math.random() * 50 + 980).toFixed(1); // 980-1030 hPa
 
   return `
-Coordinates: ${coordinates}
+Coordinates: ${lat.toFixed(4)}, ${lon.toFixed(4)}
 Temperature: ${temp}°C
 Pressure: ${pressure} hPa
 Wind: ${windSpeed} kph from ${windDir}°
@@ -175,13 +205,13 @@ Wind: ${windSpeed} kph from ${windDir}°
  */
 export async function fetchElevationData(coordinates: string): Promise<number> {
   try {
-    const [lat, lon] = coordinates.split(',').map(s => s.trim());
-    if (!lat || !lon) {
-      throw new Error('Invalid coordinates for elevation fetch.');
-    }
+    const [lat, lon] = parseCoordinates(coordinates);
+    
     const response = await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${lat}&longitude=${lon}`);
     if (!response.ok) {
-      throw new Error(`Failed to fetch elevation data: ${response.statusText}`);
+        // Provide a more specific error for failed API calls
+        const errorBody = await response.text();
+        throw new Error(`API Error (${response.status}): ${errorBody || response.statusText}`);
     }
     const data = await response.json();
     if (!data.elevation || data.elevation.length === 0) {
@@ -189,10 +219,11 @@ export async function fetchElevationData(coordinates: string): Promise<number> {
     }
     return Math.round(data.elevation[0]);
   } catch (error) {
-    console.error("Error fetching elevation data:", error);
-    // Return a random elevation as a fallback to avoid breaking the app
-    return Math.round(Math.random() * 300);
+    // Re-throw the error so it can be caught and displayed in the UI
+    if (error instanceof Error) {
+        throw error;
+    }
+    // Fallback for unknown error types
+    throw new Error('An unknown error occurred while fetching elevation.');
   }
 }
-
-    
