@@ -197,8 +197,8 @@ export function CalculatorPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
         <Card className="lg:col-span-2 shadow-lg">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+          <CardHeader className="text-center">
+            <CardTitle className="flex items-center justify-center gap-2">
               <Rocket className="w-6 h-6" />
               <span>Mission Parameters</span>
             </CardTitle>
