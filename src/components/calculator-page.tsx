@@ -131,9 +131,7 @@ export function CalculatorPage() {
           projectileType: data.projectileType,
           meteorologicalData: data.meteorologicalData,
           initialElevation: initialSolution.elevation,
-          initialAzimuth: initialSolution.azimuth,
           timeOfFlight: initialSolution.timeOfFlight,
-          range: initialSolution.range,
         };
         // Pass the raw form data separately for secure coordinate handling
         const result = await getFiringSolutionReport(aiInput, data);

@@ -147,6 +147,28 @@ export function getDistance(coord1: string, coord2: string): number {
     }
 }
 
+/**
+ * Calculates the initial bearing (azimuth) from coord1 to coord2.
+ * @param coord1 "lat, lon"
+ * @param coord2 "lat, lon"
+ * @returns Azimuth in degrees.
+ */
+export function getAzimuth(coord1: string, coord2: string): number {
+    const [lat1, lon1] = parseCoordinates(coord1);
+    const [lat2, lon2] = parseCoordinates(coord2);
+
+    const φ1 = lat1 * Math.PI / 180;
+    const φ2 = lat2 * Math.PI / 180;
+    const λ1 = lon1 * Math.PI / 180;
+    const λ2 = lon2 * Math.PI / 180;
+
+    const y = Math.sin(λ2 - λ1) * Math.cos(φ2);
+    const x = Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(λ2 - λ1);
+    const θ = Math.atan2(y, x);
+    const bearing = (θ * 180 / Math.PI + 360) % 360; // in degrees
+    return bearing;
+}
+
 
 /**
  * Simulates a ballistic calculation.
@@ -173,9 +195,8 @@ export function calculateFiringSolution(data: FormValues): FiringSolution {
   // 1. Calculate Range from coordinates
   const range = getDistance(weaponCoords, targetCoords);
 
-  // 2. Simulate Azimuth
-  // Again, would be calculated from coordinates.
-  const azimuth = ((parseInt(targetCoords.slice(-2)) / 100) * 360);
+  // 2. Calculate Azimuth
+  const azimuth = getAzimuth(weaponCoords, targetCoords);
 
   // 3. Calculate Elevation (using simple vacuum ballistic equation)
   // angle = 0.5 * asin(g*x / v^2)
@@ -193,8 +214,8 @@ export function calculateFiringSolution(data: FormValues): FiringSolution {
   const timeOfFlight = range / (muzzleVelocity * Math.cos(angleRad));
 
   return {
-    elevation: elevation + Math.random() * 0.5, // Add some randomness
-    azimuth: azimuth + Math.random() * 0.5, // Add some randomness
+    elevation: elevation,
+    azimuth: azimuth,
     timeOfFlight: timeOfFlight,
     range: range,
   };
