@@ -520,7 +520,7 @@ export function CalculatorPage() {
                 <AccordionTrigger>
                     <div className='flex items-center gap-2'>
                         <Key className="w-4 h-4"/>
-                        <span>Contact & PGP Key</span>
+                        <span>Contact us</span>
                     </div>
                 </AccordionTrigger>
                 <AccordionContent>
