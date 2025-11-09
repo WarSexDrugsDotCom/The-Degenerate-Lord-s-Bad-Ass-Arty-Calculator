@@ -525,7 +525,6 @@ export function CalculatorPage() {
                 </AccordionTrigger>
                 <AccordionContent>
                     <div className="space-y-4 p-4 border rounded-lg bg-card">
-                        <p className="text-sm text-muted-foreground">For verification purposes, you can use the PGP public key below to verify communications and updates.</p>
                         <div className="flex items-center justify-center gap-4 pt-2">
                           <a href="https://warsexdrugs.com/" target="_blank" rel="noopener noreferrer" className="text-sm text-accent hover:underline flex items-center justify-center gap-1">
                             <Link className="w-4 h-4" />
@@ -539,7 +538,7 @@ export function CalculatorPage() {
                         <Card className="mt-4 bg-background/50">
                             <CardHeader>
                                 <CardTitle className="text-lg">PGP Public Key</CardTitle>
-                                <CardDescription>Use this key to verify the authenticity of project updates, like accuracy reports.</CardDescription>
+                                <CardDescription>For sensitive correspondence, such as reporting accuracy errors which may require coordinate data for verification, please use PGP encryption to ensure privacy. ε/̵͇̿̿/’̿’̿ ̿(╥﹏╥)</CardDescription>
                             </CardHeader>
                             <CardContent>
                                 <pre className="text-xs font-code whitespace-pre-wrap bg-secondary/30 p-4 rounded-lg overflow-x-auto">
