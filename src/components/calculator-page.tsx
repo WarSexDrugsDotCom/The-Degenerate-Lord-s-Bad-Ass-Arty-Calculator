@@ -538,7 +538,7 @@ export function CalculatorPage() {
                         <Card className="mt-4 bg-background/50">
                             <CardHeader>
                                 <CardTitle className="text-lg">PGP Public Key</CardTitle>
-                                <CardDescription>For sensitive correspondence, such as reporting accuracy errors which may require coordinate data for verification, please use PGP encryption to ensure privacy. ε/̵͇̿̿/’̿’̿ ̿(╥﹏╥)</CardDescription>
+                                <CardDescription>For sensitive correspondence, such as reporting accuracy errors which may require coordinate data for verification, please use PGP encryption to ensure privacy. Ivan is a squirrely one. ε/̵͇̿̿/’̿’̿ ̿(╥﹏╥)</CardDescription>
                             </CardHeader>
                             <CardContent>
                                 <pre className="text-xs font-code whitespace-pre-wrap bg-secondary/30 p-4 rounded-lg overflow-x-auto">
