@@ -1,0 +1,176 @@
+{
+  "entities": {
+    "WeaponSystem": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "WeaponSystem",
+      "type": "object",
+      "description": "Represents a specific NATO indirect fire weapon system.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the weapon system.",
+          "format": "uuid"
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the weapon system (e.g., M777, AS90)."
+        },
+        "description": {
+          "type": "string",
+          "description": "A description of the weapon system."
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "URL of an image representing the weapon system.",
+          "format": "uri"
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ]
+    },
+    "FiringSolution": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "FiringSolution",
+      "type": "object",
+      "description": "Represents a calculated firing solution for a weapon system.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the firing solution.",
+          "format": "uuid"
+        },
+        "weaponSystemId": {
+          "type": "string",
+          "description": "Reference to WeaponSystem. (Relationship: WeaponSystem 1:N FiringSolution)"
+        },
+        "targetLatitude": {
+          "type": "number",
+          "description": "Latitude of the target coordinates."
+        },
+        "targetLongitude": {
+          "type": "number",
+          "description": "Longitude of the target coordinates."
+        },
+        "weaponLatitude": {
+          "type": "number",
+          "description": "Latitude of the weapon coordinates."
+        },
+        "weaponLongitude": {
+          "type": "number",
+          "description": "Longitude of the weapon coordinates."
+        },
+        "elevation": {
+          "type": "number",
+          "description": "Elevation of the weapon system."
+        },
+        "ammunitionType": {
+          "type": "string",
+          "description": "Type of ammunition used."
+        },
+        "charge": {
+          "type": "string",
+          "description": "Charge used for the firing solution."
+        },
+        "projectileType": {
+          "type": "string",
+          "description": "Type of projectile used."
+        },
+        "meteorologicalData": {
+          "type": "string",
+          "description": "Meteorological data used for the calculation (e.g., wind speed, direction)."
+        },
+        "firingElevation": {
+          "type": "number",
+          "description": "Calculated firing elevation."
+        },
+        "azimuth": {
+          "type": "number",
+          "description": "Calculated azimuth."
+        },
+        "timeOfFlight": {
+          "type": "number",
+          "description": "Calculated time of flight."
+        },
+        "range": {
+          "type": "number",
+          "description": "Calculated range."
+        },
+        "calculationDate": {
+          "type": "string",
+          "description": "Date and time when the firing solution was calculated.",
+          "format": "date-time"
+        },
+        "isOnlineWeatherUsed": {
+          "type": "boolean",
+          "description": "Flag that indicates if the online weather was used."
+        }
+      },
+      "required": [
+        "id",
+        "weaponSystemId",
+        "targetLatitude",
+        "targetLongitude",
+        "weaponLatitude",
+        "weaponLongitude",
+        "elevation",
+        "ammunitionType",
+        "charge",
+        "projectileType",
+        "meteorologicalData",
+        "firingElevation",
+        "azimuth",
+        "timeOfFlight",
+        "range"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/weaponSystems/{weaponSystemId}",
+        "definition": {
+          "entityName": "WeaponSystem",
+          "schema": {
+            "$ref": "#/backend/entities/WeaponSystem"
+          },
+          "description": "Stores information about available weapon systems. Accessible to all users.",
+          "params": [
+            {
+              "name": "weaponSystemId",
+              "description": "The unique identifier of the weapon system."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/firingSolutions/{firingSolutionId}",
+        "definition": {
+          "entityName": "FiringSolution",
+          "schema": {
+            "$ref": "#/backend/entities/FiringSolution"
+          },
+          "description": "Stores firing solutions specific to a user. Ensures data privacy. Includes coordinates that are not public.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            },
+            {
+              "name": "firingSolutionId",
+              "description": "The unique identifier of the firing solution."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure prioritizes user data privacy and efficient querying. Weapon systems are stored in a public collection (`weaponSystems`) since they are common across all users. Firing solutions are stored in a user-specific subcollection (`users/{userId}/firingSolutions`) to ensure that one user cannot access another's firing solutions and to allow for easy querying of firing solutions by user. Storing firing solutions as subcollections of users provides path-based ownership, simplifying security rules and eliminating the need for complex authorization logic or database lookups. Coordinates are stored as numbers to enable geo queries should those be needed in the future.\n\nThis structure achieves Authorization Independence because access to the `firingSolutions` subcollection is determined solely by the `userId` in the path, removing the need to `get()` data from other documents. The QAPs (Rules are not Filters) requirement is met by segregating firing solutions by user. Only the user identified by the `userId` can access the data stored under `/users/{userId}/firingSolutions`. Because the `weaponSystems` collection is public, no specific authorization is required.\n\nRegarding the user's concern about coordinate privacy, the chosen structure keeps firing solution data (including coordinates) private to each user, mitigating the risk of exposing user coordinates to others."
+  }
+}
