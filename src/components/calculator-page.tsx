@@ -539,7 +539,7 @@ export function CalculatorPage() {
                         <Card className="mt-4 bg-background/50">
                             <CardHeader>
                                 <CardTitle className="text-lg">PGP Public Key</CardTitle>
-                                <CardDescription>Use this key to verify the authenticity of project updates.</CardDescription>
+                                <CardDescription>Use this key to verify the authenticity of project updates, like accuracy reports.</CardDescription>
                             </CardHeader>
                             <CardContent>
                                 <pre className="text-xs font-code whitespace-pre-wrap bg-secondary/30 p-4 rounded-lg overflow-x-auto">
