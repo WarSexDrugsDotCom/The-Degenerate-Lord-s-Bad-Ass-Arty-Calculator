@@ -23,7 +23,6 @@ export async function getFiringSolutionReport(input: Omit<FiringSolutionReportIn
     const output = await generateFiringSolutionReport(aiInput);
     return output;
   } catch (e: any) {
-    // console.error(e); // Removed to prevent logging of sensitive data
     return { error: e.message || 'An unknown error occurred while generating the solution report.' };
   }
 }
