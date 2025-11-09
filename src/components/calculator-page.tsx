@@ -544,7 +544,7 @@ export function CalculatorPage() {
                             <CardContent>
                                 <pre className="text-xs font-code whitespace-pre-wrap bg-secondary/30 p-4 rounded-lg overflow-x-auto">
                                     <code>
------BEGIN PGP PUBLIC KEY BLOCK-----
+{`-----BEGIN PGP PUBLIC KEY BLOCK-----
 mDMEaRDP+hYJKwYBBAHaRw8BAQdAam/MSMezXgji3cZyUgN9x9bOmaK/KBfnYevA
 Es0SoUa0gFRyYXDPiCguXy4gKdmIU2Vuc2VpIMy/zL8gzL/MvyDMv8y/IMy/J8y/
 J1zMtc2HzL/Mv1zQtz0oIOKAosyA4bSX4oCizIEgKdmIIEZpbG0gRGVnZW5lcmF0
@@ -557,7 +557,7 @@ QNqvSS5sMjkDAQgHiH4EGBYKACYWIQT7vdG53NwAKOwD7h9S9lzS6O909gUCaRDP
 +gIbDAUJBaTklgAKCRBS9lzS6O909hMgAP0Wm68Ut4Fya5jff5JKWKcOcYN2+tsu
 i2prTbkCG6qawwEAmdG9fQMEvUVZeV8Q1UM1JvX0/hl8N8ZyZW568kDRRAM=
 =hmJV
------END PGP PUBLIC KEY BLOCK-----
+-----END PGP PUBLIC KEY BLOCK-----`}
                                     </code>
                                 </pre>
                             </CardContent>
