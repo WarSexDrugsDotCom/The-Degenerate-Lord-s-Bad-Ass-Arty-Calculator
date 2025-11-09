@@ -24,6 +24,7 @@ import {
   ShieldCheck,
   Globe,
   Grid3x3,
+  Key,
 } from 'lucide-react';
 
 import {
@@ -58,6 +59,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
 
 import { FormSchema, type FormValues, type FiringSolution, type FiringSolutionReport } from '@/lib/types';
 import { calculateFiringSolution, fetchWeatherData, fetchElevationData, getDistance, getAzimuth, getLatLonString, WEAPON_SYSTEMS } from '@/lib/arty';
@@ -210,23 +217,15 @@ export function CalculatorPage() {
 
   return (
     <div className="space-y-8">
-      <header className="text-center space-y-2">
-        <h1 className="font-headline text-3xl md:text-4xl font-bold tracking-tighter">
-          The Degenerate Lord&apos;s Bad Ass Arty Calculator
-        </h1>
-        <p className="text-muted-foreground">Precision artillery solutions with optional AI-powered analysis.</p>
-        <p className="text-xs text-muted-foreground/80 flex items-center justify-center gap-1.5"><ShieldCheck className="w-3.5 h-3.5"/> We ensure that coordinates will not be written to the server logs, protecting our users' privacy.</p>
-        <div className="flex items-center justify-center gap-4 pt-2">
-          <a href="https://warsexdrugs.com/" target="_blank" rel="noopener noreferrer" className="text-sm text-accent hover:underline flex items-center justify-center gap-1">
-            <Link className="w-4 h-4" />
-            WarSexDrugs.com
-          </a>
-          <a href="https://dopedoohickeys.com/" target="_blank" rel="noopener noreferrer" className="text-sm text-accent hover:underline flex items-center justify-center gap-1">
-            <Link className="w-4 h-4" />
-            DopeDoohickeys.com
-          </a>
+      <header className="text-center space-y-4">
+        <div>
+            <h1 className="font-headline text-3xl md:text-4xl font-bold tracking-tighter">
+              The Degenerate Lord&apos;s Bad Ass Arty Calculator
+            </h1>
+            <p className="text-muted-foreground">Precision artillery solutions with optional AI-powered analysis.</p>
         </div>
         <AsciiArt />
+        <p className="text-xs text-muted-foreground/80 flex items-center justify-center gap-1.5"><ShieldCheck className="w-3.5 h-3.5"/> We ensure that coordinates will not be written to the server logs, protecting our users' privacy.</p>
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
@@ -514,6 +513,51 @@ export function CalculatorPage() {
           )}
         </div>
       </div>
+      
+      <footer className="pt-8">
+        <Accordion type="single" collapsible className="w-full max-w-2xl mx-auto">
+            <AccordionItem value="item-1">
+                <AccordionTrigger>
+                    <div className='flex items-center gap-2'>
+                        <Key className="w-4 h-4"/>
+                        <span>Contact & PGP Key</span>
+                    </div>
+                </AccordionTrigger>
+                <AccordionContent>
+                    <div className="space-y-4 p-4 border rounded-lg bg-card">
+                        <p className="text-sm text-muted-foreground">For verification purposes, you can use the PGP public key below to verify communications and updates.</p>
+                        <div className="flex items-center justify-center gap-4 pt-2">
+                          <a href="https://warsexdrugs.com/" target="_blank" rel="noopener noreferrer" className="text-sm text-accent hover:underline flex items-center justify-center gap-1">
+                            <Link className="w-4 h-4" />
+                            WarSexDrugs.com
+                          </a>
+                          <a href="https://dopedoohickeys.com/" target="_blank" rel="noopener noreferrer" className="text-sm text-accent hover:underline flex items-center justify-center gap-1">
+                            <Link className="w-4 h-4" />
+                            DopeDoohickeys.com
+                          </a>
+                        </div>
+                        <Card className="mt-4 bg-background/50">
+                            <CardHeader>
+                                <CardTitle className="text-lg">PGP Public Key</CardTitle>
+                                <CardDescription>Use this key to verify the authenticity of project updates.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <pre className="text-xs font-code whitespace-pre-wrap bg-secondary/30 p-4 rounded-lg overflow-x-auto">
+                                    <code>
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+[PASTE YOUR PGP PUBLIC KEY BLOCK HERE]
+
+-----END PGP PUBLIC KEY BLOCK-----
+                                    </code>
+                                </pre>
+                            </CardContent>
+                        </Card>
+                    </div>
+                </AccordionContent>
+            </AccordionItem>
+        </Accordion>
+      </footer>
     </div>
   );
 }
