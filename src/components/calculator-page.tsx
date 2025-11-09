@@ -25,6 +25,7 @@ import {
   Globe,
   Grid3x3,
   Key,
+  Hand,
 } from 'lucide-react';
 
 import {
@@ -94,6 +95,8 @@ export function CalculatorPage() {
       targetLon: -74.0060,
       weaponMgrs: '',
       targetMgrs: '',
+      manualRange: 10000,
+      manualAzimuth: 45,
       elevation: 10,
       targetElevation: 10,
       ammunitionType: WEAPON_SYSTEMS[defaultWeapon].ammo[0],
@@ -129,13 +132,6 @@ export function CalculatorPage() {
       setSolution(initialSolution);
 
       if (data.refineWithAI) {
-        // All coordinate calculations are now done on the client for privacy.
-        const weaponCoords = getLatLonString(data.coordinateSystem, data.weaponLat, data.weaponLon, data.weaponMgrs);
-        const targetCoords = getLatLonString(data.coordinateSystem, data.targetLat, data.targetLon, data.targetMgrs);
-    
-        const range = getDistance(weaponCoords, targetCoords);
-        const azimuth = getAzimuth(weaponCoords, targetCoords);
-
         const aiInput = {
           weaponSystem: data.weaponSystem,
           elevation: data.elevation,
@@ -146,8 +142,8 @@ export function CalculatorPage() {
           meteorologicalData: data.meteorologicalData,
           initialElevation: initialSolution.elevation,
           timeOfFlight: initialSolution.timeOfFlight,
-          range: range,
-          initialAzimuth: azimuth,
+          range: initialSolution.range,
+          initialAzimuth: initialSolution.azimuth,
         };
 
         // The server action now only receives non-sensitive, relative data.
@@ -181,11 +177,17 @@ export function CalculatorPage() {
         const weaponCoords = getLatLonString(values.coordinateSystem, values.weaponLat, values.weaponLon, values.weaponMgrs);
         const targetCoords = getLatLonString(values.coordinateSystem, values.targetLat, values.targetLon, values.targetMgrs);
 
+        if (!weaponCoords || !targetCoords) {
+            toast({ variant: 'destructive', title: 'Cannot Fetch Data', description: 'Coordinate data is required to fetch MET and elevation.' });
+            setIsFetchingData(false);
+            return;
+        }
+
         const weatherPromise = fetchWeatherData(targetCoords);
         const weaponElevationPromise = fetchElevationData(weaponCoords);
         const targetElevationPromise = fetchElevationData(targetCoords);
         const range = getDistance(weaponCoords, targetCoords);
-        setFetchedRange(range);
+        if (range) setFetchedRange(range);
 
         const [weatherData, weaponElevationData, targetElevationData] = await Promise.all([
             weatherPromise,
@@ -270,7 +272,7 @@ export function CalculatorPage() {
                   name="coordinateSystem"
                   render={({ field }) => (
                     <FormItem className="space-y-3">
-                      <FormLabel>Coordinate System</FormLabel>
+                      <FormLabel>Input Method</FormLabel>
                       <FormControl>
                         <RadioGroup
                           onValueChange={field.onChange}
@@ -289,6 +291,12 @@ export function CalculatorPage() {
                             </FormControl>
                             <FormLabel className="font-normal flex items-center gap-2"><Grid3x3 className="w-4 h-4"/> MGRS</FormLabel>
                           </FormItem>
+                           <FormItem className="flex items-center space-x-2 space-y-0">
+                            <FormControl>
+                              <RadioGroupItem value="manual" />
+                            </FormControl>
+                            <FormLabel className="font-normal flex items-center gap-2"><Hand className="w-4 h-4"/> Manual</FormLabel>
+                          </FormItem>
                         </RadioGroup>
                       </FormControl>
                       <FormMessage />
@@ -296,7 +304,7 @@ export function CalculatorPage() {
                   )}
                 />
 
-                {coordinateSystem === 'latlon' ? (
+                {coordinateSystem === 'latlon' && (
                   <>
                     <Card className="p-4 bg-background/50">
                         <Label className="flex items-center gap-2 mb-2 text-sm"><LocateFixed className="w-4 h-4"/> Own Position</Label>
@@ -313,7 +321,8 @@ export function CalculatorPage() {
                         </div>
                     </Card>
                   </>
-                ) : (
+                )}
+                {coordinateSystem === 'mgrs' && (
                   <>
                     <FormField
                         control={form.control}
@@ -342,6 +351,15 @@ export function CalculatorPage() {
                         )}
                       />
                   </>
+                )}
+                {coordinateSystem === 'manual' && (
+                   <Card className="p-4 bg-background/50">
+                        <Label className="flex items-center gap-2 mb-2 text-sm"><Ruler className="w-4 h-4"/> Manual Input</Label>
+                        <div className="grid grid-cols-2 gap-2">
+                           <FormField control={form.control} name="manualRange" render={({field}) => (<FormItem><FormLabel>Range (m)</FormLabel><FormControl><Input placeholder="e.g. 15000" type="number" {...field}/></FormControl><FormMessage/></FormItem>)}/>
+                           <FormField control={form.control} name="manualAzimuth" render={({field}) => (<FormItem><FormLabel>Azimuth (°)</FormLabel><FormControl><Input placeholder="e.g. 45.5" type="number" {...field}/></FormControl><FormMessage/></FormItem>)}/>
+                        </div>
+                    </Card>
                 )}
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -425,7 +443,7 @@ export function CalculatorPage() {
                     <FormItem>
                       <div className="flex justify-between items-center">
                         <FormLabel className="flex items-center gap-2"><Wind className="w-4 h-4" /> MET Data</FormLabel>
-                        <Button type="button" variant="ghost" size="sm" onClick={handleFetchData} disabled={isFetchingData}>
+                        <Button type="button" variant="ghost" size="sm" onClick={handleFetchData} disabled={isFetchingData || coordinateSystem === 'manual'}>
                           {isFetchingData ? 'Fetching...' : 'Fetch Data'}
                         </Button>
                       </div>

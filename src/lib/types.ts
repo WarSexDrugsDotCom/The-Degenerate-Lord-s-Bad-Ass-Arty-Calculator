@@ -9,6 +9,8 @@ const latLonSchema = z.object({
   targetLon: z.coerce.number().min(-180, 'Invalid Longitude').max(180, 'Invalid Longitude'),
   weaponMgrs: z.string().optional(),
   targetMgrs: z.string().optional(),
+  manualRange: z.coerce.number().optional(),
+  manualAzimuth: z.coerce.number().optional(),
 });
 
 const mgrsSchema = z.object({
@@ -19,7 +21,22 @@ const mgrsSchema = z.object({
     targetLon: z.coerce.number().optional(),
     weaponMgrs: z.string().min(1, 'MGRS is required.'),
     targetMgrs: z.string().min(1, 'MGRS is required.'),
+    manualRange: z.coerce.number().optional(),
+    manualAzimuth: z.coerce.number().optional(),
 });
+
+const manualSchema = z.object({
+  coordinateSystem: z.literal('manual'),
+  weaponLat: z.coerce.number().optional(),
+  weaponLon: z.coerce.number().optional(),
+  targetLat: z.coerce.number().optional(),
+  targetLon: z.coerce.number().optional(),
+  weaponMgrs: z.string().optional(),
+  targetMgrs: z.string().optional(),
+  manualRange: z.coerce.number().min(1, 'Range is required.'),
+  manualAzimuth: z.coerce.number().min(0, 'Azimuth must be between 0 and 360.').max(360, 'Azimuth must be between 0 and 360.'),
+});
+
 
 export const FormSchema = z.object({
     weaponSystem: z.string().min(1, "Weapon system is required."),
@@ -30,7 +47,7 @@ export const FormSchema = z.object({
     projectileType: z.string().min(1, "Projectile type is required."),
     meteorologicalData: z.string().min(1, "Meteorological data is required."),
     refineWithAI: z.boolean(),
-  }).and(z.discriminatedUnion('coordinateSystem', [latLonSchema, mgrsSchema]));
+  }).and(z.discriminatedUnion('coordinateSystem', [latLonSchema, mgrsSchema, manualSchema]));
 
 export type FormValues = z.infer<typeof FormSchema>;
 

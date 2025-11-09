@@ -93,7 +93,9 @@ function parseCoordinates(coordString: string): [number, number] {
  * @param mgrsStr The MGRS string.
  * @returns A validated "lat, lon" string.
  */
-export function getLatLonString(system: 'latlon' | 'mgrs', lat: number | undefined, lon: number | undefined, mgrsStr: string | undefined): string {
+export function getLatLonString(system: 'latlon' | 'mgrs' | 'manual', lat: number | undefined, lon: number | undefined, mgrsStr: string | undefined): string | null {
+    if (system === 'manual') return null;
+
     if (system === 'mgrs') {
         if (!mgrsStr) throw new Error('MGRS coordinates are required.');
         try {
@@ -119,7 +121,8 @@ export function getLatLonString(system: 'latlon' | 'mgrs', lat: number | undefin
  * @param coord2 "lat, lon"
  * @returns distance in meters
  */
-export function getDistance(coord1: string, coord2: string): number {
+export function getDistance(coord1: string | null, coord2: string | null): number | null {
+    if (!coord1 || !coord2) return null;
     try {
         const [lat1, lon1] = parseCoordinates(coord1);
         const [lat2, lon2] = parseCoordinates(coord2);
@@ -153,7 +156,8 @@ export function getDistance(coord1: string, coord2: string): number {
  * @param coord2 "lat, lon"
  * @returns Azimuth in degrees.
  */
-export function getAzimuth(coord1: string, coord2: string): number {
+export function getAzimuth(coord1: string | null, coord2: string | null): number | null {
+    if (!coord1 || !coord2) return null;
     const [lat1, lon1] = parseCoordinates(coord1);
     const [lat2, lon2] = parseCoordinates(coord2);
 
@@ -188,17 +192,25 @@ export function calculateFiringSolution(data: FormValues): FiringSolution {
   if (!muzzleVelocity) {
       throw new Error(`Invalid charge "${data.charge}" for weapon system "${data.weaponSystem}"`);
   }
-  
-  const weaponCoords = getLatLonString(data.coordinateSystem, data.weaponLat, data.weaponLon, data.weaponMgrs);
-  const targetCoords = getLatLonString(data.coordinateSystem, data.targetLat, data.targetLon, data.targetMgrs);
 
-  // 1. Calculate Range from coordinates
-  const range = getDistance(weaponCoords, targetCoords);
+  let range: number | null;
+  let azimuth: number | null;
 
-  // 2. Calculate Azimuth
-  const azimuth = getAzimuth(weaponCoords, targetCoords);
+  if (data.coordinateSystem === 'manual') {
+    range = data.manualRange;
+    azimuth = data.manualAzimuth;
+  } else {
+    const weaponCoords = getLatLonString(data.coordinateSystem, data.weaponLat, data.weaponLon, data.weaponMgrs);
+    const targetCoords = getLatLonString(data.coordinateSystem, data.targetLat, data.targetLon, data.targetMgrs);
+    range = getDistance(weaponCoords, targetCoords);
+    azimuth = getAzimuth(weaponCoords, targetCoords);
+  }
 
-  // 3. Calculate Elevation (using simple vacuum ballistic equation)
+  if (range === null || azimuth === null) {
+    throw new Error('Could not determine range and azimuth from the provided inputs.');
+  }
+
+  // Calculate Elevation (using simple vacuum ballistic equation)
   // angle = 0.5 * asin(g*x / v^2)
   const angleRad = 0.5 * Math.asin((GRAVITY * range) / (muzzleVelocity ** 2));
   
@@ -209,7 +221,7 @@ export function calculateFiringSolution(data: FormValues): FiringSolution {
 
   const elevation = angleRad * (180 / Math.PI); // Convert to degrees
 
-  // 4. Calculate Time of Flight
+  // Calculate Time of Flight
   // t = x / (v * cos(theta))
   const timeOfFlight = range / (muzzleVelocity * Math.cos(angleRad));
 
