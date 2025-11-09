@@ -60,7 +60,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 import { FormSchema, type FormValues, type FiringSolution, type FiringSolutionReport } from '@/lib/types';
-import { calculateFiringSolution, fetchWeatherData, fetchElevationData, getDistance, getLatLonString, WEAPON_SYSTEMS } from '@/lib/arty';
+import { calculateFiringSolution, fetchWeatherData, fetchElevationData, getDistance, getAzimuth, getLatLonString, WEAPON_SYSTEMS } from '@/lib/arty';
 import { getFiringSolutionReport } from '@/app/actions';
 
 const getSystems = () => Object.keys(WEAPON_SYSTEMS);
@@ -122,6 +122,13 @@ export function CalculatorPage() {
       setSolution(initialSolution);
 
       if (data.refineWithAI) {
+        // All coordinate calculations are now done on the client for privacy.
+        const weaponCoords = getLatLonString(data.coordinateSystem, data.weaponLat, data.weaponLon, data.weaponMgrs);
+        const targetCoords = getLatLonString(data.coordinateSystem, data.targetLat, data.targetLon, data.targetMgrs);
+    
+        const range = getDistance(weaponCoords, targetCoords);
+        const azimuth = getAzimuth(weaponCoords, targetCoords);
+
         const aiInput = {
           weaponSystem: data.weaponSystem,
           elevation: data.elevation,
@@ -132,9 +139,12 @@ export function CalculatorPage() {
           meteorologicalData: data.meteorologicalData,
           initialElevation: initialSolution.elevation,
           timeOfFlight: initialSolution.timeOfFlight,
+          range: range,
+          initialAzimuth: azimuth,
         };
-        // Pass the raw form data separately for secure coordinate handling
-        const result = await getFiringSolutionReport(aiInput, data);
+
+        // The server action now only receives non-sensitive, relative data.
+        const result = await getFiringSolutionReport(aiInput);
 
         if ('error' in result) {
           throw new Error(result.error);

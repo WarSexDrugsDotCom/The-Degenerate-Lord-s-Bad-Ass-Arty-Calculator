@@ -2,27 +2,16 @@
 'use server';
 
 import { generateFiringSolutionReport, FiringSolutionReportInput, FiringSolutionReportOutput } from '@/ai/flows/refine-firing-solution';
-import { getLatLonString, getDistance, getAzimuth } from '@/lib/arty';
-import type { FormValues } from '@/lib/types';
 
-
-export async function getFiringSolutionReport(input: Omit<FiringSolutionReportInput, 'range' | 'initialAzimuth'>, formData: FormValues): Promise<FiringSolutionReportOutput | { error: string }> {
+export async function getFiringSolutionReport(input: FiringSolutionReportInput): Promise<FiringSolutionReportOutput | { error: string }> {
   try {
-    const weaponCoords = getLatLonString(formData.coordinateSystem, formData.weaponLat, formData.weaponLon, formData.weaponMgrs);
-    const targetCoords = getLatLonString(formData.coordinateSystem, formData.targetLat, formData.targetLon, formData.targetMgrs);
-    
-    const range = getDistance(weaponCoords, targetCoords);
-    const azimuth = getAzimuth(weaponCoords, targetCoords);
-
-    const aiInput: FiringSolutionReportInput = {
-        ...input,
-        range: range,
-        initialAzimuth: azimuth,
-    };
-
-    const output = await generateFiringSolutionReport(aiInput);
+    // All coordinate handling and calculations (range, azimuth) are now done on the client.
+    // This server action only receives non-sensitive, relative data and passes it to the AI.
+    const output = await generateFiringSolutionReport(input);
     return output;
   } catch (e: any) {
+    // The 'input' object no longer contains sensitive coordinate data, so it is safer to log in case of an error.
+    console.error('Error generating firing solution report for input:', input, e);
     return { error: e.message || 'An unknown error occurred while generating the solution report.' };
   }
 }
