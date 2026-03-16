@@ -1,4 +1,5 @@
 # Firebase Studio
+https://studio--studio-8120607224-6ebcd.us-central1.hosted.app
 This shit fucking works by the way and people were using it after I posted it in the Ukraine subreddits, and this app literally can only be used for getting fire solutions for indirect weapon systems of the NATO flavor. Mostly cause I didn't want to give the Ruskies something they don't have. A general fuck you to the opps. I know Ukraine uses a lot of Soviet-era artillery, but this is the way. 
 WarSexDrug.Com (-_-)ゞ ( ´ཀ`)( ㅅ )(っ´ཀ`)っ ( ´ཀ`)(‿ώ‿) ( ´ཀ`) ( • )( • ).  http://warsexdrugs.com
 (✿˶♡ᴗ♡)︻╦╤─"ℓ٥ﻻ ﻉ√٥υ"ლ(▀̿̿Ĺ̯̿̿▀̿ლ) https://DopeDoohickeys.com/
