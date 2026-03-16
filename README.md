@@ -1,4 +1,17 @@
 # Firebase Studio
+This shit fucking works by the way and people were using it after I posted it in the Ukraine subreddits, and this app literally can only be used for getting fire solutions for indirect weapon systems of the NATO flavor. Mostly cause I didn't want to give the Ruskies something they don't have. A general fuck you to the opps. I know Ukraine uses a lot of Soviet-era artillery, but this is the way. 
+WarSexDrug.Com (-_-)ゞ ( ´ཀ`)( ㅅ )(っ´ཀ`)っ ( ´ཀ`)(‿ώ‿) ( ´ཀ`) ( • )( • ).  http://warsexdrugs.com
+(✿˶♡ᴗ♡)︻╦╤─"ℓ٥ﻻ ﻉ√٥υ"ლ(▀̿̿Ĺ̯̿̿▀̿ლ) https://DopeDoohickeys.com/
+(⌐▨_▨)︻╦╤─ - - - (╥﹏╥) https://warsexdrugs.com/
+(⌐▨_▨)=ε/̵͇̿̿/'̿'̿ ̿ ̿̿ ̿̿ ̿̿  (╥﹏╥) https://amzn.to/4gX0SBy
+Fuck Amazon. I can't wait to hire me a Bruja and sue the fuck out them.
+Bruja = Lawyer...
+Fucking hate you faggots
+(✿˶♡ᴗ♡)︻╦╤─--- ℓ٥ﻻ ﻉ√٥υ https://www.youtube.com/@TheDegenerateLord
+Kiss!(˘ε˘")Kiss!(˘ε˘")Kiss https://vimeo.com/filmdegenerates
+https://Instagram.com/jk_Cinema
+∩╮( •̀ᴗ•́ )و https://www.dopedoohickeys.com/s/stories/my-main-gripe-with-trump-2
+Trapψ(._. )>Sensei
 
 This is a NextJS starter in Firebase Studio.
 
